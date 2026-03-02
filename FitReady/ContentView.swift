@@ -9,6 +9,9 @@ struct ContentView: View {
             HistoryView()
                 .tabItem { Label("Trends",   systemImage: "chart.line.uptrend.xyaxis") }
 
+            ProfileView()
+                .tabItem { Label("Profile",  systemImage: "person.fill") }
+
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }

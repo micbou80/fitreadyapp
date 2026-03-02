@@ -8,6 +8,7 @@ final class HealthKitManager: ObservableObject {
 
     @Published var todayMetrics: DailyMetrics?
     @Published var baselineMetrics: [DailyMetrics] = []
+    @Published var currentWeightKg: Double?
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
@@ -17,6 +18,7 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.quantityType(forIdentifier: .heartRateVariabilitySDNN) { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .restingHeartRate)          { types.insert(t) }
         if let t = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)             { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .bodyMass)                  { types.insert(t) }
         return types
     }()
 
@@ -60,6 +62,9 @@ final class HealthKitManager: ObservableObject {
             sleepHours: await sleep
         )
 
+        // Body weight — most recent sample ever
+        currentWeightKg = await fetchLatestBodyMass()
+
         // Baseline: fetch each of the past N days
         var metrics: [DailyMetrics] = []
         for offset in 1...max(1, baselineDays) {
@@ -82,6 +87,22 @@ final class HealthKitManager: ObservableObject {
     }
 
     // MARK: - Private fetch helpers
+
+    private func fetchLatestBodyMass() async -> Double? {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else { return nil }
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: nil,
+                limit: 1,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { _, samples, _ in
+                let kg = (samples?.first as? HKQuantitySample)?.quantity.doubleValue(for: .gramUnit(with: .kilo))
+                continuation.resume(returning: kg)
+            }
+            store.execute(query)
+        }
+    }
 
     private func fetchLatestHRV(from start: Date, to end: Date) async -> Double? {
         guard let type = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return nil }

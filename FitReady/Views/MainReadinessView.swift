@@ -10,6 +10,9 @@ struct MainReadinessView: View {
     @AppStorage("hrvNeutralThreshold")   private var hrvNeutralThreshold: Double = 0.80
     @AppStorage("rhrGoodThreshold")      private var rhrGoodThreshold: Double = 1.03
     @AppStorage("rhrNeutralThreshold")   private var rhrNeutralThreshold: Double = 1.08
+    @AppStorage("goalWeightKg")          private var goalWeight: Double = 0
+    @AppStorage("manualWeightKg")        private var manualWeight: Double = 0
+    @AppStorage("useManualWeight")       private var useManualWeight: Bool = false
 
     // MARK: - Computed
 
@@ -22,6 +25,11 @@ struct MainReadinessView: View {
             rhrGoodThreshold: rhrGoodThreshold,
             rhrNeutralThreshold: rhrNeutralThreshold
         )
+    }
+
+    private var displayWeight: Double? {
+        if useManualWeight { return manualWeight > 0 ? manualWeight : nil }
+        return healthKit.currentWeightKg
     }
 
     private var readinessScore: ReadinessScore? {
@@ -118,7 +126,14 @@ struct MainReadinessView: View {
                     )
                 }
                 .padding(.horizontal, 16)
-                .padding(.bottom, 16)
+
+                // Weight card (shown when we have a current weight and a goal set)
+                if let currentKg = displayWeight, goalWeight > 0 {
+                    WeightCardView(current: currentKg, goal: goalWeight)
+                        .padding(.horizontal, 16)
+                }
+
+                Spacer(minLength: 16)
             }
         }
     }

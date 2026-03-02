@@ -7,40 +7,44 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
-		BF0000000000000000000001 /* FitReadyApp.swift in Sources */         = {isa = PBXBuildFile; fileRef = BF0000000000000000000021 /* FitReadyApp.swift */; };
-		BF0000000000000000000002 /* ContentView.swift in Sources */         = {isa = PBXBuildFile; fileRef = BF0000000000000000000022 /* ContentView.swift */; };
-		BF0000000000000000000003 /* MainReadinessView.swift in Sources */   = {isa = PBXBuildFile; fileRef = BF0000000000000000000023 /* MainReadinessView.swift */; };
-		BF0000000000000000000004 /* HistoryView.swift in Sources */         = {isa = PBXBuildFile; fileRef = BF0000000000000000000024 /* HistoryView.swift */; };
-		BF0000000000000000000005 /* SettingsView.swift in Sources */        = {isa = PBXBuildFile; fileRef = BF0000000000000000000025 /* SettingsView.swift */; };
-		BF0000000000000000000006 /* ReadinessRingView.swift in Sources */   = {isa = PBXBuildFile; fileRef = BF0000000000000000000026 /* ReadinessRingView.swift */; };
-		BF0000000000000000000007 /* MetricCardView.swift in Sources */      = {isa = PBXBuildFile; fileRef = BF0000000000000000000027 /* MetricCardView.swift */; };
-		BF0000000000000000000008 /* HealthKitManager.swift in Sources */    = {isa = PBXBuildFile; fileRef = BF0000000000000000000028 /* HealthKitManager.swift */; };
-		BF0000000000000000000009 /* ReadinessEngine.swift in Sources */     = {isa = PBXBuildFile; fileRef = BF0000000000000000000029 /* ReadinessEngine.swift */; };
-		BF000000000000000000000A /* DailyMetrics.swift in Sources */        = {isa = PBXBuildFile; fileRef = BF000000000000000000002A /* DailyMetrics.swift */; };
-		BF000000000000000000000B /* ReadinessScore.swift in Sources */      = {isa = PBXBuildFile; fileRef = BF000000000000000000002B /* ReadinessScore.swift */; };
-		BF000000000000000000000C /* Assets.xcassets in Resources */         = {isa = PBXBuildFile; fileRef = BF000000000000000000002C /* Assets.xcassets */; };
+		BF0000000000000000000001 /* FitReadyApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000021 /* FitReadyApp.swift */; };
+		BF0000000000000000000002 /* ContentView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000022 /* ContentView.swift */; };
+		BF0000000000000000000003 /* MainReadinessView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000023 /* MainReadinessView.swift */; };
+		BF0000000000000000000004 /* HistoryView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000024 /* HistoryView.swift */; };
+		BF0000000000000000000005 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000025 /* SettingsView.swift */; };
+		BF0000000000000000000006 /* ReadinessRingView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000026 /* ReadinessRingView.swift */; };
+		BF0000000000000000000007 /* MetricCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000027 /* MetricCardView.swift */; };
+		BF0000000000000000000008 /* HealthKitManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000028 /* HealthKitManager.swift */; };
+		BF0000000000000000000009 /* ReadinessEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000029 /* ReadinessEngine.swift */; };
+		BF000000000000000000000A /* DailyMetrics.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000002A /* DailyMetrics.swift */; };
+		BF000000000000000000000B /* ReadinessScore.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000002B /* ReadinessScore.swift */; };
+		BF000000000000000000000C /* Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000002C /* Assets.xcassets */; };
 		BF000000000000000000000D /* Preview Assets.xcassets in Resources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000002D /* Preview Assets.xcassets */; };
-		BF000000000000000000000E /* HealthKit.framework in Frameworks */    = {isa = PBXBuildFile; fileRef = BF000000000000000000002E /* HealthKit.framework */; };
+		BF000000000000000000000E /* HealthKit.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = BF000000000000000000002E /* HealthKit.framework */; };
+		BF000000000000000000000F /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000032 /* ProfileView.swift */; };
+		BF0000000000000000000010 /* WeightCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000033 /* WeightCardView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
-		BF0000000000000000000021 /* FitReadyApp.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitReadyApp.swift; sourceTree = "<group>"; };
-		BF0000000000000000000022 /* ContentView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000021 /* FitReadyApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FitReadyApp.swift; sourceTree = "<group>"; };
+		BF0000000000000000000022 /* ContentView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ContentView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000023 /* MainReadinessView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainReadinessView.swift; sourceTree = "<group>"; };
-		BF0000000000000000000024 /* HistoryView.swift */       = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
-		BF0000000000000000000025 /* SettingsView.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000024 /* HistoryView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HistoryView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000025 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000026 /* ReadinessRingView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessRingView.swift; sourceTree = "<group>"; };
-		BF0000000000000000000027 /* MetricCardView.swift */    = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardView.swift; sourceTree = "<group>"; };
-		BF0000000000000000000028 /* HealthKitManager.swift */  = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
-		BF0000000000000000000029 /* ReadinessEngine.swift */   = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessEngine.swift; sourceTree = "<group>"; };
-		BF000000000000000000002A /* DailyMetrics.swift */      = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyMetrics.swift; sourceTree = "<group>"; };
-		BF000000000000000000002B /* ReadinessScore.swift */    = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessScore.swift; sourceTree = "<group>"; };
-		BF000000000000000000002C /* Assets.xcassets */         = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
+		BF0000000000000000000027 /* MetricCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MetricCardView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000028 /* HealthKitManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HealthKitManager.swift; sourceTree = "<group>"; };
+		BF0000000000000000000029 /* ReadinessEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessEngine.swift; sourceTree = "<group>"; };
+		BF000000000000000000002A /* DailyMetrics.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DailyMetrics.swift; sourceTree = "<group>"; };
+		BF000000000000000000002B /* ReadinessScore.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ReadinessScore.swift; sourceTree = "<group>"; };
+		BF000000000000000000002C /* Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = Assets.xcassets; sourceTree = "<group>"; };
 		BF000000000000000000002D /* Preview Assets.xcassets */ = {isa = PBXFileReference; lastKnownFileType = folder.assetcatalog; path = "Preview Assets.xcassets"; sourceTree = "<group>"; };
-		BF000000000000000000002E /* HealthKit.framework */     = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
-		BF000000000000000000002F /* Info.plist */              = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
-		BF0000000000000000000030 /* FitReady.entitlements */   = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitReady.entitlements; sourceTree = "<group>"; };
-		BF0000000000000000000031 /* FitReady.app */            = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitReady.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF000000000000000000002E /* HealthKit.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = HealthKit.framework; path = System/Library/Frameworks/HealthKit.framework; sourceTree = SDKROOT; };
+		BF000000000000000000002F /* Info.plist */ = {isa = PBXFileReference; lastKnownFileType = text.plist.xml; path = Info.plist; sourceTree = "<group>"; };
+		BF0000000000000000000030 /* FitReady.entitlements */ = {isa = PBXFileReference; lastKnownFileType = text.plist.entitlements; path = FitReady.entitlements; sourceTree = "<group>"; };
+		BF0000000000000000000031 /* FitReady.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = FitReady.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		BF0000000000000000000032 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000033 /* WeightCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightCardView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -86,6 +90,7 @@
 				BF0000000000000000000023 /* MainReadinessView.swift */,
 				BF0000000000000000000024 /* HistoryView.swift */,
 				BF0000000000000000000025 /* SettingsView.swift */,
+				BF0000000000000000000032 /* ProfileView.swift */,
 				BF0000000000000000000044 /* Components */,
 			);
 			path = Views;
@@ -96,6 +101,7 @@
 			children = (
 				BF0000000000000000000026 /* ReadinessRingView.swift */,
 				BF0000000000000000000027 /* MetricCardView.swift */,
+				BF0000000000000000000033 /* WeightCardView.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -170,7 +176,7 @@
 			attributes = {
 				BuildIndependentTargetsInParallel = 1;
 				LastSwiftUpdateCheck = 1500;
-				LastUpgradeCheck = 1500;
+				LastUpgradeCheck = 2630;
 				TargetAttributes = {
 					BF0000000000000000000051 = {
 						CreatedOnToolsVersion = 15.0;
@@ -223,6 +229,8 @@
 				BF0000000000000000000009 /* ReadinessEngine.swift in Sources */,
 				BF000000000000000000000A /* DailyMetrics.swift in Sources */,
 				BF000000000000000000000B /* ReadinessScore.swift in Sources */,
+				BF000000000000000000000F /* ProfileView.swift in Sources */,
+				BF0000000000000000000010 /* WeightCardView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -253,6 +261,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
@@ -264,6 +273,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = dwarf;
+				DEVELOPMENT_TEAM = U7BG3FD65B;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_TESTABILITY = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -286,6 +296,7 @@
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_ACTIVE_COMPILATION_CONDITIONS = "DEBUG $(inherited)";
 				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
 			};
@@ -315,6 +326,7 @@
 				CLANG_WARN_INT_CONVERSION = YES;
 				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
 				CLANG_WARN_OBJC_IMPLICIT_RETAIN_CYCLE = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
 				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
 				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
 				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
@@ -326,6 +338,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				COPY_PHASE_STRIP = NO;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				DEVELOPMENT_TEAM = U7BG3FD65B;
 				ENABLE_NS_ASSERTIONS = NO;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
 				ENABLE_USER_SCRIPT_SANDBOXING = YES;
@@ -340,6 +353,7 @@
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				MTL_FAST_MATH = YES;
 				SDKROOT = iphoneos;
+				STRING_CATALOG_GENERATE_SYMBOLS = YES;
 				SWIFT_COMPILATION_MODE = wholemodule;
 				SWIFT_OPTIMIZATION_LEVEL = "-O";
 				VALIDATE_PRODUCT = YES;
@@ -357,13 +371,14 @@
 				DEVELOPMENT_ASSET_PATHS = "\"FitReady/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = FitReady/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.fitready.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitready.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.9;
@@ -382,13 +397,14 @@
 				DEVELOPMENT_ASSET_PATHS = "\"FitReady/Preview Content\"";
 				ENABLE_PREVIEWS = YES;
 				INFOPLIST_FILE = FitReady/Info.plist;
+				INFOPLIST_KEY_LSApplicationCategoryType = "public.app-category.healthcare-fitness";
 				IPHONEOS_DEPLOYMENT_TARGET = 17.0;
 				LD_RUNPATH_SEARCH_PATHS = (
 					"$(inherited)",
 					"@executable_path/Frameworks",
 				);
 				MARKETING_VERSION = 1.0;
-				PRODUCT_BUNDLE_IDENTIFIER = com.fitready.app;
+				PRODUCT_BUNDLE_IDENTIFIER = com.fitready.test;
 				PRODUCT_NAME = "$(TARGET_NAME)";
 				SWIFT_EMIT_LOC_STRINGS = YES;
 				SWIFT_VERSION = 5.9;
@@ -418,7 +434,6 @@
 			defaultConfigurationName = Release;
 		};
 /* End XCConfigurationList section */
-
 	};
 	rootObject = BF0000000000000000000052 /* Project object */;
 }
