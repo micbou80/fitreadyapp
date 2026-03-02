@@ -9,6 +9,7 @@ final class HealthKitManager: ObservableObject {
     @Published var todayMetrics: DailyMetrics?
     @Published var baselineMetrics: [DailyMetrics] = []
     @Published var currentWeightKg: Double?
+    @Published var currentBodyFatPct: Double?
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
@@ -19,6 +20,7 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.quantityType(forIdentifier: .restingHeartRate)          { types.insert(t) }
         if let t = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)             { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .bodyMass)                  { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)         { types.insert(t) }
         return types
     }()
 
@@ -62,8 +64,9 @@ final class HealthKitManager: ObservableObject {
             sleepHours: await sleep
         )
 
-        // Body weight — most recent sample ever
-        currentWeightKg = await fetchLatestBodyMass()
+        // Body weight and body fat — most recent sample ever
+        currentWeightKg    = await fetchLatestBodyMass()
+        currentBodyFatPct  = await fetchLatestBodyFatPercentage()
 
         // Baseline: fetch each of the past N days
         var metrics: [DailyMetrics] = []
@@ -87,6 +90,27 @@ final class HealthKitManager: ObservableObject {
     }
 
     // MARK: - Private fetch helpers
+
+    private func fetchLatestBodyFatPercentage() async -> Double? {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .bodyFatPercentage) else { return nil }
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: nil,
+                limit: 1,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { _, samples, _ in
+                // HealthKit stores body fat as a fraction (0.18 = 18%); convert to display percentage
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                let pct = sample.quantity.doubleValue(for: .percent()) * 100
+                continuation.resume(returning: pct)
+            }
+            store.execute(query)
+        }
+    }
 
     private func fetchLatestBodyMass() async -> Double? {
         guard let type = HKQuantityType.quantityType(forIdentifier: .bodyMass) else { return nil }

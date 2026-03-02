@@ -13,6 +13,9 @@ struct MainReadinessView: View {
     @AppStorage("goalWeightKg")          private var goalWeight: Double = 0
     @AppStorage("manualWeightKg")        private var manualWeight: Double = 0
     @AppStorage("useManualWeight")       private var useManualWeight: Bool = false
+    @AppStorage("goalBodyFatPct")        private var goalBodyFat: Double = 0
+    @AppStorage("manualBodyFatPct")      private var manualBodyFat: Double = 0
+    @AppStorage("useManualBodyFat")      private var useManualBodyFat: Bool = false
 
     // MARK: - Computed
 
@@ -30,6 +33,11 @@ struct MainReadinessView: View {
     private var displayWeight: Double? {
         if useManualWeight { return manualWeight > 0 ? manualWeight : nil }
         return healthKit.currentWeightKg
+    }
+
+    private var displayBodyFat: Double? {
+        if useManualBodyFat { return manualBodyFat > 0 ? manualBodyFat : nil }
+        return healthKit.currentBodyFatPct
     }
 
     private var readinessScore: ReadinessScore? {
@@ -130,6 +138,12 @@ struct MainReadinessView: View {
                 // Weight card (shown when we have a current weight and a goal set)
                 if let currentKg = displayWeight, goalWeight > 0 {
                     WeightCardView(current: currentKg, goal: goalWeight)
+                        .padding(.horizontal, 16)
+                }
+
+                // Body fat card
+                if let currentBF = displayBodyFat, goalBodyFat > 0 {
+                    BodyFatCardView(current: currentBF, goal: goalBodyFat)
                         .padding(.horizontal, 16)
                 }
 
