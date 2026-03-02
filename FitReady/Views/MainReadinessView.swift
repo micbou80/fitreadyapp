@@ -1,5 +1,21 @@
 import SwiftUI
 
+enum ScheduledActivity: String, CaseIterable, Identifiable {
+    case rest    = "rest"
+    case run     = "run"
+    case workout = "workout"
+
+    var id: String { rawValue }
+    var label: String { rawValue.capitalized }
+    var icon: String {
+        switch self {
+        case .rest:    return "moon.zzz.fill"
+        case .run:     return "figure.run"
+        case .workout: return "dumbbell.fill"
+        }
+    }
+}
+
 struct MainReadinessView: View {
 
     @EnvironmentObject private var healthKit: HealthKitManager
@@ -16,6 +32,8 @@ struct MainReadinessView: View {
     @AppStorage("goalBodyFatPct")        private var goalBodyFat: Double = 0
     @AppStorage("manualBodyFatPct")      private var manualBodyFat: Double = 0
     @AppStorage("useManualBodyFat")      private var useManualBodyFat: Bool = false
+    @AppStorage("scheduledActivity")     private var scheduledActivityRaw: String = ""
+    @AppStorage("scheduledActivityDate") private var scheduledActivityDate: String = ""
 
     // MARK: - Computed
 
@@ -44,6 +62,15 @@ struct MainReadinessView: View {
         guard let today = healthKit.todayMetrics,
               !healthKit.baselineMetrics.isEmpty else { return nil }
         return ReadinessEngine.compute(today: today, baseline: healthKit.baselineMetrics, settings: settings)
+    }
+
+    private var todayKey: String {
+        Date().formatted(.dateTime.year().month().day())
+    }
+
+    private var selectedActivity: ScheduledActivity? {
+        guard scheduledActivityDate == todayKey else { return nil }
+        return ScheduledActivity(rawValue: scheduledActivityRaw)
     }
 
     private var dateLabel: String {
@@ -116,6 +143,9 @@ struct MainReadinessView: View {
                 // Ring
                 ReadinessRingView(score: score)
 
+                // Schedule picker
+                schedulePicker
+
                 // Metric cards
                 HStack(spacing: 10) {
                     MetricCardView(
@@ -159,6 +189,54 @@ struct MainReadinessView: View {
 
                 Spacer(minLength: 16)
             }
+        }
+    }
+
+    // MARK: - Schedule picker
+
+    @ViewBuilder
+    private var schedulePicker: some View {
+        VStack(spacing: 10) {
+            Text("Today's Plan")
+                .font(.subheadline).fontWeight(.semibold)
+                .foregroundStyle(Color(.secondaryLabel))
+                .frame(maxWidth: .infinity, alignment: .leading)
+                .padding(.horizontal, 16)
+
+            HStack(spacing: 10) {
+                ForEach(ScheduledActivity.allCases) { activity in
+                    let isSelected = selectedActivity == activity
+                    Button {
+                        selectActivity(activity)
+                    } label: {
+                        HStack(spacing: 6) {
+                            Image(systemName: activity.icon)
+                            Text(activity.label)
+                                .fontWeight(.semibold)
+                        }
+                        .font(.subheadline)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, 10)
+                        .background(isSelected ? Color.accentColor : Color(.systemBackground))
+                        .foregroundStyle(isSelected ? .white : Color(.label))
+                        .clipShape(RoundedRectangle(cornerRadius: 12))
+                        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
+                    }
+                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+        }
+    }
+
+    private func selectActivity(_ activity: ScheduledActivity) {
+        if selectedActivity == activity {
+            // Tap again to deselect
+            scheduledActivityRaw = ""
+            scheduledActivityDate = ""
+        } else {
+            scheduledActivityRaw  = activity.rawValue
+            scheduledActivityDate = todayKey
         }
     }
 
