@@ -159,7 +159,7 @@ Total score -3 to +3 → verdict:
 - GitHub: `git@github.com:micbou80/fitreadyapp.git`
 - Branch: `main`
 - SSH key configured at `~/.ssh/id_ed25519_github`
-- Working directory: `/tmp/fitreadyapp`
+- Working directory: `/Users/micbou/Library/Mobile Documents/com~apple~CloudDocs/Claude/FitReady/fitreadyapp`
 - After committing, push with: `git push origin main`
 
 ---
