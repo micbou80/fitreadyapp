@@ -1,465 +1,200 @@
-# Claude.md — Product Blueprint
-## Project: Calm Adaptive Fitness App (Working Title)
+# CLAUDE.md — FitReady
+
+This file is the single source of truth for both product vision and technical context.
+Update it as decisions are made. Claude Code reads this on every session.
 
 ---
 
-# 1. Product Vision
+## Product Vision
 
-## Core Promise
-> In under 10 seconds per day, tell the user what to do to stay on track with their health, without stress, complexity, or guilt.
+### Core Promise
+> In under 10 seconds per day, tell the user what to do to stay on track with their health — without stress, complexity, or guilt.
 
----
-
-## Core Emotional Outcome
+### Core Emotional Outcome
 Every interaction must leave the user feeling:
-
-- "I’m doing okay"
+- "I'm doing okay"
 - "I know what to do next"
-- "I’m making progress"
+- "I'm making progress"
 
----
+### Positioning
+This is NOT a calorie tracker, workout library, or hardcore coaching app.
+This IS: **a calm, adaptive daily decision system for health and fitness.**
 
-## Positioning
-This is NOT:
-- A calorie tracker
-- A workout library
-- A hardcore coaching app
+### Core Principles (Non-Negotiable)
+1. Clarity over complexity
+2. Guidance over control
+3. Consistency over perfection
+4. Progress over precision
+5. Calm over pressure
 
-This IS:
-> A calm, adaptive daily decision system for health and fitness
+### UX Rules
+- <3 seconds to understand today's state
+- <60 seconds to log a workout
+- <10 seconds to log a meal
+- No tutorials. No friction. No punishment.
 
----
+### Tone
+Always calm, supportive, short, non-judgmental.
 
-# 2. Core Product Principles (Non-Negotiable)
-
-1. Clarity over complexity  
-2. Guidance over control  
-3. Consistency over perfection  
-4. Progress over precision  
-5. Calm over pressure  
-
----
-
-# 3. Core Features
-
-## 3.1 Daily Readiness
-
-### Inputs
-- HRV (3-day average)
-- Resting Heart Rate (3-day average)
-- Sleep duration
-
-### Output
-- 🟢 Train
-- 🟡 Go lighter
-- 🔴 Recover
-
-### Rules
-- No single-day overreaction
-- Always explain in one sentence
-- Allow user override
-
----
-
-## 3.2 Training System
-
-### Templates
-- 2–3 days → Full Body
-- 4 days → Upper/Lower
-- 5+ days → Push/Pull/Legs
-
-### Structure
-- 4–6 exercises per session
-- Movement-based (push/pull/squat/hinge)
-
----
-
-## 3.3 Progressive Overload Engine
-
-### Per Exercise
-Track:
-- Weight
-- Reps
-- Sets
-
-### Calculation
-- e1RM = weight × (1 + reps / 30)
-
----
-
-### Progression Rules
-
-IF:
-- All sets hit top rep range → increase weight
-
-ELSE IF:
-- Reps increased → keep weight
-
-ELSE:
-- Maintain and build
-
----
-
-### Plateau Detection
-
-Trigger:
-- No improvement for 3 sessions
-
-Action:
-- Reduce weight by 5–8%
-- Rebuild reps
-
----
-
-## 3.4 Nutrition Tracking
-
-### Input
-- Photo (primary)
-- Optional:
-  - Portion size (S/M/L)
-  - Oil/sauce (yes/no)
-
----
-
-### Output
-- Calories range
-- Protein range (priority)
-- Confidence level
-
----
-
-### Targets
-- Protein: ~2.2g/kg bodyweight
-- Calories: TDEE - deficit
-
----
-
-### UX
-- Show ranges, not exact numbers
-- Focus on:
-  - "On track"
-  - "Slight adjustment"
-  - "Off track"
-
----
-
-# 4. Daily User Flow
-
-## Morning
-- Readiness shown
-- Workout suggestion
-- 1 key action
-
----
-
-## During Day
-- Meal logging (photo)
-- Protein guidance
-
----
-
-## Post Workout
-- Log sets (tap-based)
-- Show improvement
-
----
-
-## Evening
-- Daily summary
-- Reinforcement
-
----
-
-# 5. UX Design Principles
-
-## Rules
-
-- <3 seconds to understand state
-- <60 seconds to log workout
-- <10 seconds to log meal
-
----
-
-## Tone
-
-Always:
-- Calm
-- Supportive
-- Short
-- Non-judgmental
-
----
-
-## Replace:
-
-| Bad UX | Good UX |
-|------|--------|
+| Avoid | Use instead |
+|-------|-------------|
 | "You failed" | "Slight adjustment" |
 | "Missed workout" | "Pick it up tomorrow" |
 | "Over calories" | "Balance tomorrow" |
 
 ---
 
-# 6. Today Screen Structure
+## Current Build State
 
-## Sections
+The app is in early MVP stage: **readiness scoring + weight tracking only.**
+No workout logging, nutrition, or training system yet (planned — see Roadmap).
 
-1. Greeting
-2. Readiness Card
-3. Workout Plan
-4. Nutrition Status
-5. Momentum
-6. Micro-win
-
----
-
-## Must Answer
-
-- Can I train?
-- What should I do?
-- Am I doing okay?
+### What works today
+- HealthKit reads: HRV (SDNN), Resting HR, Sleep Analysis, Body Mass
+- 7-day rolling baseline per metric
+- Readiness verdict: Ready / Go Light / Rest Day
+- History charts (7 days, Swift Charts)
+- Settings: baseline days, sleep target, HRV/RHR thresholds
+- Profile: weight goal, manual weight entry or HealthKit auto
+- Weight card on Today screen (current → goal progress bar)
 
 ---
 
-# 7. Logging System
+## Technical Stack
 
-## Workout Logging
-
-- Pre-filled exercises
-- Suggested weights
-- Tap-based reps input
-- Auto progression
-
----
-
-## Nutrition Logging
-
-- Photo-first
-- 1–2 taps max
-- Repeat meals
+| Layer | Choice |
+|-------|--------|
+| Platform | iOS 17+, Swift, SwiftUI |
+| Data | HealthKit (read-only), `@AppStorage` / UserDefaults |
+| Charts | Swift Charts (built-in, no packages) |
+| Backend | None (fully local) |
+| AI | Not integrated yet (planned for food logging) |
+| Future | WatchOS, SwiftData, Claude API (Haiku/Sonnet) |
 
 ---
 
-## Health Data
+## Project Structure
 
-- Pulled automatically via HealthKit
-- No manual entry required
-
----
-
-# 8. Retention System
-
-## Daily Loop
-
-Trigger → Action → Reward → Progress
-
----
-
-## Key Mechanics
-
-### 1. Momentum (not streaks)
-- 2/3 pillars = success
-
-### 2. Micro-wins
-- Always show progress
-
-### 3. Identity
-- "You are consistent"
+```
+FitReady/
+  FitReadyApp.swift              ← @main, requests HealthKit auth on launch
+  ContentView.swift              ← TabView: Today | Trends | Profile | Settings
+  Models/
+    DailyMetrics.swift           ← struct: date, hrv?, rhr?, sleepHours?
+    ReadinessScore.swift         ← ReadinessVerdict enum + ReadinessScore struct
+  Services/
+    HealthKitManager.swift       ← all HK queries (async/await), @MainActor ObservableObject
+    ReadinessEngine.swift        ← pure scoring logic, AppSettings struct
+  Views/
+    MainReadinessView.swift      ← Today tab: ring + metric cards + weight card
+    HistoryView.swift            ← Trends tab: 3 Swift Charts line charts
+    ProfileView.swift            ← Profile tab: weight goal + manual weight entry
+    SettingsView.swift           ← Settings tab: thresholds, baseline days, sleep target
+    Components/
+      ReadinessRingView.swift    ← animated circular ring (AngularGradient, spring)
+      MetricCardView.swift       ← reusable HRV / RHR / Sleep card
+      WeightCardView.swift       ← weight progress card (current → goal bar)
+```
 
 ---
 
-## Avoid
+## Key Technical Decisions
 
-- Punishment
-- Fragile streaks
-- Over-precision
+### HealthKit
+- Authorization requested at launch in `FitReadyApp.swift`
+- Read types: HRV SDNN, Resting HR, Sleep Analysis, Body Mass
+- All queries use `async/await` via `withCheckedContinuation`
+- `HealthKitManager` is `@MainActor final class` injected as `@EnvironmentObject`
+- Sleep window: 6pm → noon next day (catches naps and late nights)
+- Refresh on foreground via `NotificationCenter` + `UIApplication.willEnterForegroundNotification`
 
----
+### Scoring Algorithm (ReadinessEngine)
+Each metric scored -1 / 0 / +1 vs. 7-day rolling average:
 
-# 9. AI Strategy (Claude)
+| Metric | Good (+1) | Neutral (0) | Poor (-1) |
+|--------|-----------|-------------|-----------|
+| HRV (higher=better) | ≥ baseline × 0.95 | ≥ baseline × 0.80 | < baseline × 0.80 |
+| RHR (lower=better) | ≤ baseline × 1.03 | ≤ baseline × 1.08 | > baseline × 1.08 |
+| Sleep | ≥ target hrs | ≥ 6.0 hrs | < 6.0 hrs |
 
-## Use AI for:
+Total score -3 to +3 → verdict:
+- ≥ 2 → Ready (green)
+- 0–1 → Go Light (orange)
+- ≤ -1 → Rest Day (red)
 
-- Food estimation
-- Weekly summaries
-- Occasional insights
+### Persistence
+- All user settings via `@AppStorage` (UserDefaults) — no CoreData yet
+- Keys in use: `baselineDays`, `sleepTargetHours`, `hrvGoodThreshold`, `hrvNeutralThreshold`, `rhrGoodThreshold`, `rhrNeutralThreshold`, `goalWeightKg`, `manualWeightKg`, `useManualWeight`
 
----
-
-## Do NOT use AI for:
-
-- Readiness logic
-- Progression logic
-- Daily decisions
-
----
-
-## Food Prompt (System)
-
-You estimate macros conservatively.  
-Return ranges.  
-Protein is priority.  
-Output JSON only.
-
----
-
-## Coaching Prompt
-
-Tone:
-- Supportive
-- Short
-- Practical
-
-Output:
-- 1 insight
-- 1 encouragement
-- 1 next step
+### Xcode Project
+- Project file: manually maintained `project.pbxproj`
+- UUIDs must be exactly **24 hex characters** (prefix `BF000000000000000000...`)
+- Next available build file UUID: `BF0000000000000000000011`
+- Next available file reference UUID: `BF0000000000000000000034`
+- When adding a new Swift file, add entries in **four** places in pbxproj:
+  1. `PBXBuildFile` section
+  2. `PBXFileReference` section
+  3. The relevant `PBXGroup` children list
+  4. `PBXSourcesBuildPhase` files list
 
 ---
 
-# 10. Tech Architecture
+## Device & Build Config
 
-## Frontend
-- SwiftUI (iOS)
-- WatchOS support
+| Setting | Value |
+|---------|-------|
+| Bundle ID | `com.fitready.test` |
+| Development Team | `U7BG3FD65B` (Michel Bouman) |
+| Device | iPhone18,2, iOS 26.4 (beta) |
+| Xcode | 26.3 |
+| Entitlement | `com.apple.developer.healthkit = true` (basic only — no Verifiable Health Records) |
+| Minimum deployment | iOS 17.0 |
 
----
-
-## Data
-- SwiftData / CoreData
-- HealthKit integration
-
----
-
-## Backend (minimal)
-- API for food recognition
-- Auth + subscriptions
+**Important:** Do NOT add `com.apple.developer.healthkit.background-delivery` or `com.apple.developer.healthkit.recalibrate-estimates` — personal team provisioning rejects them.
 
 ---
 
-## AI
-- Claude Haiku (default)
-- Claude Sonnet (food + summaries)
+## Repo & Git
+
+- GitHub: `git@github.com:micbou80/fitreadyapp.git`
+- Branch: `main`
+- SSH key configured at `~/.ssh/id_ed25519_github`
+- Working directory: `/tmp/fitreadyapp`
+- After committing, push with: `git push origin main`
 
 ---
 
-## Cost Strategy
-- Target: €1–€2 per user/month
-- Cache aggressively
-- Limit heavy usage
+## Roadmap (Planned Features)
+
+In rough priority order:
+
+1. **Workout logging** — pre-filled sessions, tap-to-log reps/sets, auto-progression (e1RM)
+2. **Training templates** — Full Body (2–3d), Upper/Lower (4d), PPL (5d+)
+3. **Nutrition logging** — photo-first, Claude API for macro estimation (ranges not exact)
+4. **Onboarding flow** — goal, training days, gym type, HealthKit connect
+5. **Daily summary / momentum score** — 2/3 pillars = success, not streaks
+6. **WatchOS companion** — readiness glance, workout log
+7. **Subscriptions** — €7.99/mo or €59/yr, 7-day trial
+
+### AI Strategy (when added)
+- Claude Haiku: food photo estimation, quick responses
+- Claude Sonnet: weekly summaries, coaching insights
+- **Never use AI for:** readiness scoring, progression logic, daily decisions (keep those deterministic)
+- Food prompt returns JSON with calorie range + protein range + confidence
+- Target AI cost: €1–2 per user/month — cache aggressively
 
 ---
 
-# 11. Pricing
+## What Will Kill This App
 
-## Recommended
-
-- €7.99/month
-- €59/year
-- 7-day free trial
-
----
-
-## Reasoning
-
-- Strong perceived value
-- Healthy margins
-- Better retention than €5
+- Too many features at once
+- Exact numbers instead of ranges/guidance
+- Any UX that makes users feel judged or guilty
+- Breaking the <3 second comprehension rule on the Today screen
 
 ---
 
-# 12. Onboarding
+## Definition of Success
 
-## Steps
-
-1. Goal (default: fat loss)
-2. Training days
-3. Gym type
-4. HealthKit connect
-
----
-
-## Output immediately:
-
-- Readiness
-- Today plan
-
----
-
-## Rule
-No tutorials. No friction.
-
----
-
-# 13. First 7 Days (Habit Formation)
-
-## Day 1
-- Clarity
-
-## Day 2
-- First progress signal
-
-## Day 3
-- Introduce nutrition
-
-## Day 4
-- Identity reinforcement
-
-## Day 5
-- Adaptive behavior
-
-## Day 6
-- Consistency reward
-
-## Day 7
-- Weekly summary
-
----
-
-# 14. Key Metrics
-
-## Primary KPI
-- % users active 5/7 days (week 1)
-
----
-
-## Secondary
-- Workout completion rate
-- Meal logging frequency
-- Retention (D7, D30)
-
----
-
-# 15. What Will Kill This App
-
-- Too many features
-- Too much AI
-- Too much input
-- Poor accuracy without UX buffering
-- Breaking emotional trust
-
----
-
-# 16. Final Definition
-
-This app succeeds if:
-
-> It is easier to use than doing nothing
-
----
-
-# 17. Final Test
-
-After a bad day, user opens app.
-
-If they feel:
-
-"I’m okay, let’s keep going"
-
-→ Product is working
-
-If not:
-
-→ Redesign immediately
-
----
+> After a bad day, the user opens the app and feels: "I'm okay, let's keep going."
+> If not — redesign immediately.
