@@ -100,6 +100,16 @@ struct MainReadinessView: View {
                         .font(.subheadline)
                         .foregroundStyle(Color(.secondaryLabel))
                         .multilineTextAlignment(.center)
+
+                    let reason = reasonText(for: score)
+                    if !reason.isEmpty {
+                        Text(reason)
+                            .font(.footnote)
+                            .foregroundStyle(Color(.tertiaryLabel))
+                            .multilineTextAlignment(.center)
+                            .padding(.horizontal, 32)
+                            .padding(.top, 2)
+                    }
                 }
                 .padding(.top, 8)
 
@@ -214,6 +224,54 @@ struct MainReadinessView: View {
             .buttonStyle(.borderedProminent)
             .padding(.top, 4)
         }
+    }
+
+    // MARK: - Reason text
+
+    private func reasonText(for score: ReadinessScore) -> String {
+        var good: [String] = []
+        var off:  [String] = []
+
+        if score.todayHRV != nil {
+            switch score.hrvScore {
+            case  1: good.append("HRV is strong")
+            case  0: off.append("HRV is slightly off")
+            default: off.append("HRV is low")
+            }
+        }
+        if score.todayRHR != nil {
+            switch score.rhrScore {
+            case  1: good.append("heart rate is steady")
+            case  0: off.append("heart rate is slightly elevated")
+            default: off.append("heart rate is elevated")
+            }
+        }
+        if score.todaySleep != nil {
+            switch score.sleepScore {
+            case  1: good.append("sleep was solid")
+            case  0: off.append("sleep was a bit short")
+            default: off.append("sleep was short")
+            }
+        }
+
+        if good.isEmpty && off.isEmpty { return "" }
+        if off.isEmpty  { return ucfirst(join(good)) + "." }
+        if good.isEmpty { return ucfirst(join(off))  + "." }
+        return ucfirst(join(good)) + ", but " + join(off) + "."
+    }
+
+    private func join(_ items: [String]) -> String {
+        switch items.count {
+        case 0:  return ""
+        case 1:  return items[0]
+        case 2:  return "\(items[0]) and \(items[1])"
+        default: return items.dropLast().joined(separator: ", ") + ", and " + items.last!
+        }
+    }
+
+    private func ucfirst(_ s: String) -> String {
+        guard let first = s.first else { return s }
+        return first.uppercased() + s.dropFirst()
     }
 
     // MARK: - Helpers
