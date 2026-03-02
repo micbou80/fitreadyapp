@@ -4,20 +4,27 @@ struct ProfileView: View {
 
     @EnvironmentObject private var healthKit: HealthKitManager
 
+    @AppStorage("startWeightKg")     private var startWeight: Double = 0
     @AppStorage("goalWeightKg")      private var goalWeight: Double = 0
     @AppStorage("manualWeightKg")    private var manualWeight: Double = 0
     @AppStorage("useManualWeight")   private var useManualWeight: Bool = false
+    @AppStorage("startBodyFatPct")   private var startBodyFat: Double = 0
     @AppStorage("goalBodyFatPct")    private var goalBodyFat: Double = 0
     @AppStorage("manualBodyFatPct")  private var manualBodyFat: Double = 0
     @AppStorage("useManualBodyFat")  private var useManualBodyFat: Bool = false
 
+    @State private var startWeightText: String = ""
     @State private var goalWeightText: String = ""
     @State private var manualWeightText: String = ""
+    @State private var startBodyFatText: String = ""
     @State private var goalBodyFatText: String = ""
     @State private var manualBodyFatText: String = ""
     @FocusState private var focusedField: Field?
 
-    private enum Field { case goalWeight, manualWeight, goalBodyFat, manualBodyFat }
+    private enum Field {
+        case startWeight, goalWeight, manualWeight
+        case startBodyFat, goalBodyFat, manualBodyFat
+    }
 
     private var currentWeight: Double? {
         if useManualWeight { return manualWeight > 0 ? manualWeight : nil }
@@ -37,45 +44,51 @@ struct ProfileView: View {
                 ScrollView {
                     VStack(spacing: 20) {
 
-                        // MARK: Weight summary card
+                        // ── WEIGHT ───────────────────────────────────
+
+                        sectionHeader("Weight", icon: "scalemass.fill")
+
                         if let cw = currentWeight, goalWeight > 0 {
-                            weightSummaryCard(current: cw, goal: goalWeight)
+                            WeightCardView(
+                                current: cw,
+                                goal: goalWeight,
+                                start: startWeight > 0 ? startWeight : nil
+                            )
                         }
 
-                        // MARK: Goal weight
                         formCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("Goal Weight", systemImage: "flag.fill")
-                                    .font(.headline)
-
-                                HStack {
-                                    TextField("e.g. 75", text: $goalWeightText)
-                                        .keyboardType(.decimalPad)
-                                        .focused($focusedField, equals: .goalWeight)
-                                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                                        .onSubmit { saveGoalWeight() }
-
-                                    Text("kg")
-                                        .font(.title2)
-                                        .foregroundStyle(Color(.secondaryLabel))
-                                }
-
-                                if goalWeight > 0 {
-                                    Text("Current goal: \(String(format: "%.1f", goalWeight)) kg")
-                                        .font(.caption)
-                                        .foregroundStyle(Color(.secondaryLabel))
-                                }
-
-                                Button("Save Goal") { saveGoalWeight() }
-                                    .buttonStyle(.borderedProminent)
-                                    .disabled(goalWeightText.isEmpty)
-                            }
+                            inputSection(
+                                title: "Starting Weight",
+                                icon: "flag.checkered",
+                                hint: "e.g. 85",
+                                unit: "kg",
+                                text: $startWeightText,
+                                field: .startWeight,
+                                savedValue: startWeight > 0 ? String(format: "%.1f kg saved", startWeight) : nil,
+                                buttonLabel: "Save Starting Weight",
+                                tint: .purple,
+                                onSave: saveStartWeight
+                            )
                         }
 
-                        // MARK: Current weight
+                        formCard {
+                            inputSection(
+                                title: "Goal Weight",
+                                icon: "flag.fill",
+                                hint: "e.g. 72",
+                                unit: "kg",
+                                text: $goalWeightText,
+                                field: .goalWeight,
+                                savedValue: goalWeight > 0 ? String(format: "%.1f kg saved", goalWeight) : nil,
+                                buttonLabel: "Save Goal",
+                                tint: .accentColor,
+                                onSave: saveGoalWeight
+                            )
+                        }
+
                         formCard {
                             VStack(alignment: .leading, spacing: 14) {
-                                Label("Current Weight", systemImage: "scalemass.fill")
+                                Label("Current Weight", systemImage: "scalemass")
                                     .font(.headline)
 
                                 if let hkWeight = healthKit.currentWeightKg {
@@ -88,10 +101,8 @@ struct ProfileView: View {
                                                 .foregroundStyle(Color(.secondaryLabel))
                                         }
                                         Spacer()
-                                        Image(systemName: "heart.fill")
-                                            .foregroundStyle(.red)
+                                        Image(systemName: "heart.fill").foregroundStyle(.red)
                                     }
-
                                     Toggle("Use manual entry instead", isOn: $useManualWeight)
                                         .font(.subheadline)
                                 }
@@ -103,12 +114,10 @@ struct ProfileView: View {
                                             .focused($focusedField, equals: .manualWeight)
                                             .font(.system(size: 32, weight: .bold, design: .rounded))
                                             .onSubmit { saveManualWeight() }
-
                                         Text("kg")
                                             .font(.title2)
                                             .foregroundStyle(Color(.secondaryLabel))
                                     }
-
                                     Button("Save Weight") { saveManualWeight() }
                                         .buttonStyle(.borderedProminent)
                                         .tint(.orange)
@@ -117,48 +126,50 @@ struct ProfileView: View {
                             }
                         }
 
-                        Text("Weight data from Apple Health updates automatically when you weigh yourself.")
-                            .font(.caption)
-                            .foregroundStyle(Color(.tertiaryLabel))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                        disclaimer("Weight from Apple Health updates automatically when you weigh yourself.")
 
-                        // MARK: Body fat summary card
+                        // ── BODY FAT ─────────────────────────────────
+
+                        sectionHeader("Body Fat", icon: "figure.stand")
+
                         if let bf = currentBodyFat, goalBodyFat > 0 {
-                            bodyFatSummaryCard(current: bf, goal: goalBodyFat)
+                            BodyFatCardView(
+                                current: bf,
+                                goal: goalBodyFat,
+                                start: startBodyFat > 0 ? startBodyFat : nil
+                            )
                         }
 
-                        // MARK: Goal body fat
                         formCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("Goal Body Fat", systemImage: "chart.bar.fill")
-                                    .font(.headline)
-
-                                HStack {
-                                    TextField("e.g. 15", text: $goalBodyFatText)
-                                        .keyboardType(.decimalPad)
-                                        .focused($focusedField, equals: .goalBodyFat)
-                                        .font(.system(size: 32, weight: .bold, design: .rounded))
-                                        .onSubmit { saveGoalBodyFat() }
-
-                                    Text("%")
-                                        .font(.title2)
-                                        .foregroundStyle(Color(.secondaryLabel))
-                                }
-
-                                if goalBodyFat > 0 {
-                                    Text("Current goal: \(String(format: "%.1f", goalBodyFat))%")
-                                        .font(.caption)
-                                        .foregroundStyle(Color(.secondaryLabel))
-                                }
-
-                                Button("Save Goal") { saveGoalBodyFat() }
-                                    .buttonStyle(.borderedProminent)
-                                    .disabled(goalBodyFatText.isEmpty)
-                            }
+                            inputSection(
+                                title: "Starting Body Fat",
+                                icon: "flag.checkered",
+                                hint: "e.g. 26",
+                                unit: "%",
+                                text: $startBodyFatText,
+                                field: .startBodyFat,
+                                savedValue: startBodyFat > 0 ? String(format: "%.1f%% saved", startBodyFat) : nil,
+                                buttonLabel: "Save Starting Body Fat",
+                                tint: .purple,
+                                onSave: saveStartBodyFat
+                            )
                         }
 
-                        // MARK: Current body fat
+                        formCard {
+                            inputSection(
+                                title: "Goal Body Fat",
+                                icon: "chart.bar.fill",
+                                hint: "e.g. 18",
+                                unit: "%",
+                                text: $goalBodyFatText,
+                                field: .goalBodyFat,
+                                savedValue: goalBodyFat > 0 ? String(format: "%.1f%% saved", goalBodyFat) : nil,
+                                buttonLabel: "Save Goal",
+                                tint: .accentColor,
+                                onSave: saveGoalBodyFat
+                            )
+                        }
+
                         formCard {
                             VStack(alignment: .leading, spacing: 14) {
                                 Label("Current Body Fat", systemImage: "figure.stand")
@@ -174,10 +185,8 @@ struct ProfileView: View {
                                                 .foregroundStyle(Color(.secondaryLabel))
                                         }
                                         Spacer()
-                                        Image(systemName: "heart.fill")
-                                            .foregroundStyle(.red)
+                                        Image(systemName: "heart.fill").foregroundStyle(.red)
                                     }
-
                                     Toggle("Use manual entry instead", isOn: $useManualBodyFat)
                                         .font(.subheadline)
                                 }
@@ -189,12 +198,10 @@ struct ProfileView: View {
                                             .focused($focusedField, equals: .manualBodyFat)
                                             .font(.system(size: 32, weight: .bold, design: .rounded))
                                             .onSubmit { saveManualBodyFat() }
-
                                         Text("%")
                                             .font(.title2)
                                             .foregroundStyle(Color(.secondaryLabel))
                                     }
-
                                     Button("Save Body Fat") { saveManualBodyFat() }
                                         .buttonStyle(.borderedProminent)
                                         .tint(.orange)
@@ -203,11 +210,7 @@ struct ProfileView: View {
                             }
                         }
 
-                        Text("Body fat data from Apple Health updates when synced from a compatible scale.")
-                            .font(.caption)
-                            .foregroundStyle(Color(.tertiaryLabel))
-                            .multilineTextAlignment(.center)
-                            .padding(.horizontal)
+                        disclaimer("Body fat from Apple Health updates when synced from a compatible scale.")
                     }
                     .padding()
                 }
@@ -215,78 +218,31 @@ struct ProfileView: View {
             }
             .navigationTitle("Profile")
             .onAppear {
-                if goalWeight > 0 { goalWeightText = String(format: "%.1f", goalWeight) }
-                if manualWeight > 0 { manualWeightText = String(format: "%.1f", manualWeight) }
-                if goalBodyFat > 0 { goalBodyFatText = String(format: "%.1f", goalBodyFat) }
+                if startWeight   > 0 { startWeightText   = String(format: "%.1f", startWeight)   }
+                if goalWeight    > 0 { goalWeightText    = String(format: "%.1f", goalWeight)    }
+                if manualWeight  > 0 { manualWeightText  = String(format: "%.1f", manualWeight)  }
+                if startBodyFat  > 0 { startBodyFatText  = String(format: "%.1f", startBodyFat)  }
+                if goalBodyFat   > 0 { goalBodyFatText   = String(format: "%.1f", goalBodyFat)   }
                 if manualBodyFat > 0 { manualBodyFatText = String(format: "%.1f", manualBodyFat) }
             }
         }
     }
 
-    // MARK: - Weight summary card
+    // MARK: - Layout helpers
 
     @ViewBuilder
-    private func weightSummaryCard(current: Double, goal: Double) -> some View {
-        let delta = current - goal
-        let isLosing = delta > 0
-        let progress = max(0, min(1, 1 - abs(delta) / max(current, goal)))
-
-        VStack(spacing: 16) {
-            HStack(spacing: 0) {
-                Spacer()
-                VStack(spacing: 4) {
-                    Text(String(format: "%.1f", current))
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                    Text("now (kg)")
-                        .font(.caption)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-                Spacer()
-                Image(systemName: isLosing ? "arrow.down" : "arrow.up")
-                    .font(.title2)
-                    .foregroundStyle(isLosing ? Color(red: 1.0, green: 0.55, blue: 0.26) : Color(red: 0.20, green: 0.78, blue: 0.35))
-                Spacer()
-                VStack(spacing: 4) {
-                    Text(String(format: "%.1f", goal))
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                    Text("goal (kg)")
-                        .font(.caption)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-                Spacer()
-            }
-
-            // Progress bar
-            VStack(alignment: .leading, spacing: 6) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(.systemGray5))
-                            .frame(height: 10)
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(isLosing ? Color(red: 1.0, green: 0.55, blue: 0.26) : Color(red: 0.20, green: 0.78, blue: 0.35))
-                            .frame(width: geo.size.width * progress, height: 10)
-                    }
-                }
-                .frame(height: 10)
-
-                HStack {
-                    Text(String(format: "%.1f kg to go", abs(delta)))
-                        .font(.subheadline).fontWeight(.semibold)
-                    Spacer()
-                    Text(String(format: "%.0f%%", progress * 100))
-                        .font(.subheadline)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-            }
+    private func sectionHeader(_ title: String, icon: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: icon).foregroundStyle(Color.accentColor)
+            Text(title.uppercased())
+                .font(.system(size: 12, weight: .bold))
+                .foregroundStyle(Color(.secondaryLabel))
+                .kerning(0.8)
+            Spacer()
         }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .padding(.top, 4)
+        .padding(.horizontal, 2)
     }
-
-    // MARK: - Helpers
 
     @ViewBuilder
     private func formCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
@@ -298,93 +254,84 @@ struct ProfileView: View {
             .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
     }
 
-    private func saveGoalWeight() {
-        if let v = Double(goalWeightText.replacingOccurrences(of: ",", with: ".")) {
-            goalWeight = v
+    @ViewBuilder
+    private func inputSection(
+        title: String,
+        icon: String,
+        hint: String,
+        unit: String,
+        text: Binding<String>,
+        field: Field,
+        savedValue: String?,
+        buttonLabel: String,
+        tint: Color,
+        onSave: @escaping () -> Void
+    ) -> some View {
+        VStack(alignment: .leading, spacing: 14) {
+            Label(title, systemImage: icon).font(.headline)
+
+            HStack {
+                TextField(hint, text: text)
+                    .keyboardType(.decimalPad)
+                    .focused($focusedField, equals: field)
+                    .font(.system(size: 32, weight: .bold, design: .rounded))
+                    .onSubmit { onSave() }
+                Text(unit)
+                    .font(.title2)
+                    .foregroundStyle(Color(.secondaryLabel))
+            }
+
+            if let saved = savedValue {
+                Text(saved)
+                    .font(.caption)
+                    .foregroundStyle(Color(.secondaryLabel))
+            }
+
+            Button(buttonLabel, action: onSave)
+                .buttonStyle(.borderedProminent)
+                .tint(tint)
+                .disabled(text.wrappedValue.isEmpty)
         }
+    }
+
+    @ViewBuilder
+    private func disclaimer(_ text: String) -> some View {
+        Text(text)
+            .font(.caption)
+            .foregroundStyle(Color(.tertiaryLabel))
+            .multilineTextAlignment(.center)
+            .padding(.horizontal)
+    }
+
+    // MARK: - Save helpers
+
+    private func saveStartWeight() {
+        if let v = Double(startWeightText.replacingOccurrences(of: ",", with: ".")) { startWeight = v }
+        focusedField = nil
+    }
+
+    private func saveGoalWeight() {
+        if let v = Double(goalWeightText.replacingOccurrences(of: ",", with: ".")) { goalWeight = v }
         focusedField = nil
     }
 
     private func saveManualWeight() {
-        if let v = Double(manualWeightText.replacingOccurrences(of: ",", with: ".")) {
-            manualWeight = v
-        }
+        if let v = Double(manualWeightText.replacingOccurrences(of: ",", with: ".")) { manualWeight = v }
         focusedField = nil
     }
 
-    // MARK: - Body fat summary card
-
-    @ViewBuilder
-    private func bodyFatSummaryCard(current: Double, goal: Double) -> some View {
-        let delta = current - goal
-        let isDecreasing = delta > 0
-        let progress = max(0, min(1, 1 - abs(delta) / max(current, goal)))
-
-        VStack(spacing: 16) {
-            HStack(spacing: 0) {
-                Spacer()
-                VStack(spacing: 4) {
-                    Text(String(format: "%.1f", current))
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                    Text("now (%)")
-                        .font(.caption)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-                Spacer()
-                Image(systemName: isDecreasing ? "arrow.down" : "arrow.up")
-                    .font(.title2)
-                    .foregroundStyle(isDecreasing ? Color(red: 1.0, green: 0.55, blue: 0.26) : Color(red: 0.20, green: 0.78, blue: 0.35))
-                Spacer()
-                VStack(spacing: 4) {
-                    Text(String(format: "%.1f", goal))
-                        .font(.system(size: 36, weight: .black, design: .rounded))
-                    Text("goal (%)")
-                        .font(.caption)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-                Spacer()
-            }
-
-            VStack(alignment: .leading, spacing: 6) {
-                GeometryReader { geo in
-                    ZStack(alignment: .leading) {
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(Color(.systemGray5))
-                            .frame(height: 10)
-                        RoundedRectangle(cornerRadius: 6)
-                            .fill(isDecreasing ? Color(red: 1.0, green: 0.55, blue: 0.26) : Color(red: 0.20, green: 0.78, blue: 0.35))
-                            .frame(width: geo.size.width * progress, height: 10)
-                    }
-                }
-                .frame(height: 10)
-
-                HStack {
-                    Text(String(format: "%.1f%% to go", abs(delta)))
-                        .font(.subheadline).fontWeight(.semibold)
-                    Spacer()
-                    Text(String(format: "%.0f%%", progress * 100))
-                        .font(.subheadline)
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-            }
-        }
-        .padding()
-        .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+    private func saveStartBodyFat() {
+        if let v = Double(startBodyFatText.replacingOccurrences(of: ",", with: ".")) { startBodyFat = v }
+        focusedField = nil
     }
 
     private func saveGoalBodyFat() {
-        if let v = Double(goalBodyFatText.replacingOccurrences(of: ",", with: ".")) {
-            goalBodyFat = v
-        }
+        if let v = Double(goalBodyFatText.replacingOccurrences(of: ",", with: ".")) { goalBodyFat = v }
         focusedField = nil
     }
 
     private func saveManualBodyFat() {
-        if let v = Double(manualBodyFatText.replacingOccurrences(of: ",", with: ".")) {
-            manualBodyFat = v
-        }
+        if let v = Double(manualBodyFatText.replacingOccurrences(of: ",", with: ".")) { manualBodyFat = v }
         focusedField = nil
     }
 }

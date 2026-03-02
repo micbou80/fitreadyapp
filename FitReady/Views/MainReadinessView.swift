@@ -32,6 +32,8 @@ struct MainReadinessView: View {
     @AppStorage("goalBodyFatPct")        private var goalBodyFat: Double = 0
     @AppStorage("manualBodyFatPct")      private var manualBodyFat: Double = 0
     @AppStorage("useManualBodyFat")      private var useManualBodyFat: Bool = false
+    @AppStorage("startWeightKg")         private var startWeight: Double = 0
+    @AppStorage("startBodyFatPct")       private var startBodyFat: Double = 0
     @AppStorage("weeklyScheduleJSON")    private var weeklyScheduleJSON: String = "{}"
 
     // MARK: - Computed
@@ -181,14 +183,22 @@ struct MainReadinessView: View {
 
                 // Weight card (shown when we have a current weight and a goal set)
                 if let currentKg = displayWeight, goalWeight > 0 {
-                    WeightCardView(current: currentKg, goal: goalWeight)
-                        .padding(.horizontal, 16)
+                    WeightCardView(
+                        current: currentKg,
+                        goal: goalWeight,
+                        start: startWeight > 0 ? startWeight : nil
+                    )
+                    .padding(.horizontal, 16)
                 }
 
                 // Body fat card
                 if let currentBF = displayBodyFat, goalBodyFat > 0 {
-                    BodyFatCardView(current: currentBF, goal: goalBodyFat)
-                        .padding(.horizontal, 16)
+                    BodyFatCardView(
+                        current: currentBF,
+                        goal: goalBodyFat,
+                        start: startBodyFat > 0 ? startBodyFat : nil
+                    )
+                    .padding(.horizontal, 16)
                 }
 
                 Spacer(minLength: 16)

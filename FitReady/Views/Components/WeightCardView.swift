@@ -2,70 +2,181 @@ import SwiftUI
 
 struct WeightCardView: View {
 
-    let current: Double
-    let goal: Double
+    let current: Double    // kg now
+    let goal: Double       // kg target
+    let start: Double?     // kg when they began (nil = not set)
 
-    private var delta: Double { current - goal }
-    private var isLosing: Bool { delta > 0 }
+    private var isLosing: Bool { current > goal }
     private var accentColor: Color {
-        isLosing ? Color(red: 1.0, green: 0.55, blue: 0.26) : Color(red: 0.20, green: 0.78, blue: 0.35)
+        isLosing
+            ? Color(red: 1.0, green: 0.55, blue: 0.26)
+            : Color(red: 0.20, green: 0.78, blue: 0.35)
     }
-    /// How far along toward the goal (0 = just started, 1 = at goal)
+    private var hasStart: Bool { (start ?? 0) > 0 }
+
     private var progress: Double {
-        guard goal > 0 else { return 0 }
-        // Assume start = current (no progress yet if we only have one point)
-        // Progress bar shows closeness: if within 0.5 kg = 100%, scales linearly
-        let closeEnough = 15.0 // assume ≤15 kg total journey
-        return max(0, min(1, 1 - abs(delta) / closeEnough))
+        guard hasStart, let s = start, abs(s - goal) > 0.01 else {
+            return max(0, min(1, 1 - abs(current - goal) / 15.0))
+        }
+        return max(0, min(1, abs(s - current) / abs(s - goal)))
     }
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 14) {
-            // Header
-            HStack {
+        VStack(alignment: .leading, spacing: 0) {
+
+            // ── Top row: label + % badge ─────────────────
+            HStack(alignment: .top, spacing: 8) {
                 Label("Weight", systemImage: "scalemass.fill")
                     .font(.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color(.secondaryLabel))
                 Spacer()
-                Text(delta == 0 ? "Goal reached!" : String(format: "%+.1f kg to goal", -delta))
-                    .font(.caption).fontWeight(.semibold)
-                    .foregroundStyle(accentColor)
-            }
-
-            // Numbers
-            HStack(alignment: .firstTextBaseline, spacing: 0) {
-                Text(String(format: "%.1f", current))
-                    .font(.system(size: 32, weight: .black, design: .rounded))
-                Text(" kg")
-                    .font(.callout)
-                    .foregroundStyle(Color(.secondaryLabel))
-                Spacer()
-                Image(systemName: isLosing ? "arrow.down.circle.fill" : "arrow.up.circle.fill")
-                    .font(.title2)
-                    .foregroundStyle(accentColor)
-                Text(String(format: " %.1f kg goal", goal))
-                    .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
-            }
-
-            // Progress bar
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(Color(.systemGray5))
-                        .frame(height: 8)
-                    RoundedRectangle(cornerRadius: 5)
-                        .fill(accentColor)
-                        .frame(width: geo.size.width * progress, height: 8)
-                        .animation(.spring(duration: 0.8), value: progress)
+                if hasStart {
+                    pctBadge(pct: Int((progress * 100).rounded()))
                 }
             }
-            .frame(height: 8)
+            .padding(.bottom, 12)
+
+            // ── Current value ────────────────────────────
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(String(format: "%.1f", current))
+                    .font(.system(size: 38, weight: .black, design: .rounded))
+                Text("kg")
+                    .font(.title3)
+                    .foregroundStyle(Color(.secondaryLabel))
+            }
+            .padding(.bottom, 4)
+
+            // ── Delta from start ─────────────────────────
+            if hasStart, let s = start, abs(s - current) > 0.05 {
+                let symbol = s > current ? "↓" : "↑"
+                Text("\(symbol) \(String(format: "%.1f kg from start", abs(s - current)))")
+                    .font(.subheadline).fontWeight(.medium)
+                    .foregroundStyle(accentColor)
+            }
+
+            // ── Journey track ────────────────────────────
+            VStack(spacing: 6) {
+                JourneyTrack(progress: progress, color: accentColor)
+                    .padding(.top, 16)
+                HStack {
+                    if hasStart, let s = start {
+                        anchorLabel(value: String(format: "%.1f kg", s), tag: "start", alignment: .leading)
+                    }
+                    Spacer()
+                    anchorLabel(value: String(format: "%.1f kg", goal), tag: "goal", alignment: .trailing)
+                }
+            }
+            .padding(.bottom, 14)
+
+            // ── Divider + to-go stat ─────────────────────
+            Divider().padding(.bottom, 10)
+
+            HStack(spacing: 5) {
+                if current == goal {
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                    Text("Goal reached!")
+                        .fontWeight(.semibold)
+                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                } else {
+                    Image(systemName: "arrow.right")
+                        .font(.caption.weight(.bold))
+                        .foregroundStyle(accentColor)
+                    Text(String(format: "%.1f kg to go", abs(current - goal)))
+                        .fontWeight(.semibold)
+                }
+                Spacer()
+            }
+            .font(.subheadline)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 14)
+        .padding(16)
         .background(Color(.systemBackground))
-        .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .clipShape(RoundedRectangle(cornerRadius: 16))
+        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+    }
+
+    // MARK: - Sub-views
+
+    @ViewBuilder
+    private func pctBadge(pct: Int) -> some View {
+        VStack(alignment: .trailing, spacing: 1) {
+            HStack(alignment: .firstTextBaseline, spacing: 0) {
+                Text(String(pct))
+                    .font(.system(size: 30, weight: .black, design: .rounded))
+                Text("%")
+                    .font(.system(size: 18, weight: .black, design: .rounded))
+            }
+            .foregroundStyle(accentColor)
+            Text("complete")
+                .font(.system(size: 10, weight: .semibold))
+                .foregroundStyle(Color(.tertiaryLabel))
+        }
+    }
+
+    @ViewBuilder
+    private func anchorLabel(value: String, tag: String, alignment: HorizontalAlignment) -> some View {
+        VStack(alignment: alignment, spacing: 1) {
+            Text(value)
+                .font(.caption).fontWeight(.semibold)
+                .foregroundStyle(Color(.secondaryLabel))
+            Text(tag)
+                .font(.system(size: 10))
+                .foregroundStyle(Color(.tertiaryLabel))
+        }
+    }
+}
+
+// MARK: - Shared progress track (used by WeightCardView + BodyFatCardView)
+
+struct JourneyTrack: View {
+
+    let progress: Double
+    let color: Color
+
+    var body: some View {
+        GeometryReader { geo in
+            let w          = geo.size.width
+            let markerD: CGFloat = 18
+            let trackH: CGFloat  = 5
+            let vCenter          = (markerD - trackH) / 2
+            let p                = max(0.0, min(1.0, progress))
+            let fillW            = w * p
+            let markerX          = max(0, min(w - markerD, fillW - markerD / 2))
+
+            ZStack(alignment: .topLeading) {
+                // Background track
+                Capsule()
+                    .fill(Color(.systemGray5))
+                    .frame(width: w, height: trackH)
+                    .offset(y: vCenter)
+
+                // Filled gradient
+                if fillW > 0 {
+                    Capsule()
+                        .fill(LinearGradient(
+                            colors: [color.opacity(0.25), color],
+                            startPoint: .leading,
+                            endPoint: .trailing
+                        ))
+                        .frame(width: fillW, height: trackH)
+                        .offset(y: vCenter)
+                        .animation(.spring(response: 0.6, dampingFraction: 0.8), value: progress)
+                }
+
+                // Marker: white halo + colored core
+                ZStack {
+                    Circle()
+                        .fill(Color(.systemBackground))
+                        .frame(width: markerD, height: markerD)
+                        .shadow(color: color.opacity(0.35), radius: 5, x: 0, y: 2)
+                    Circle()
+                        .fill(color)
+                        .frame(width: markerD - 6, height: markerD - 6)
+                }
+                .offset(x: markerX)
+                .animation(.spring(response: 0.6, dampingFraction: 0.8), value: progress)
+            }
+        }
+        .frame(height: 18)
     }
 }
