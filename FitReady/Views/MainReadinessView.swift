@@ -32,8 +32,7 @@ struct MainReadinessView: View {
     @AppStorage("goalBodyFatPct")        private var goalBodyFat: Double = 0
     @AppStorage("manualBodyFatPct")      private var manualBodyFat: Double = 0
     @AppStorage("useManualBodyFat")      private var useManualBodyFat: Bool = false
-    @AppStorage("scheduledActivity")     private var scheduledActivityRaw: String = ""
-    @AppStorage("scheduledActivityDate") private var scheduledActivityDate: String = ""
+    @AppStorage("weeklyScheduleJSON")    private var weeklyScheduleJSON: String = "{}"
 
     // MARK: - Computed
 
@@ -64,13 +63,18 @@ struct MainReadinessView: View {
         return ReadinessEngine.compute(today: today, baseline: healthKit.baselineMetrics, settings: settings)
     }
 
-    private var todayKey: String {
-        Date().formatted(.dateTime.year().month().day())
+    private var weeklySchedule: [String: String] {
+        (try? JSONDecoder().decode([String: String].self, from: Data(weeklyScheduleJSON.utf8))) ?? [:]
     }
 
-    private var selectedActivity: ScheduledActivity? {
-        guard scheduledActivityDate == todayKey else { return nil }
-        return ScheduledActivity(rawValue: scheduledActivityRaw)
+    /// The 7 days of the current week, Mon–Sun.
+    private var currentWeekDays: [Date] {
+        let cal = Calendar.current
+        let today = cal.startOfDay(for: Date())
+        let weekday = cal.component(.weekday, from: today) // 1=Sun … 7=Sat
+        let daysFromMonday = (weekday + 5) % 7             // 0=Mon … 6=Sun
+        let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today)!
+        return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: monday) }
     }
 
     private var dateLabel: String {
@@ -143,8 +147,8 @@ struct MainReadinessView: View {
                 // Ring
                 ReadinessRingView(score: score)
 
-                // Schedule picker
-                schedulePicker
+                // Weekly schedule
+                weeklySchedulePicker
 
                 // Metric cards
                 HStack(spacing: 10) {
@@ -192,51 +196,103 @@ struct MainReadinessView: View {
         }
     }
 
-    // MARK: - Schedule picker
+    // MARK: - Weekly schedule picker
 
     @ViewBuilder
-    private var schedulePicker: some View {
+    private var weeklySchedulePicker: some View {
         VStack(spacing: 10) {
-            Text("Today's Plan")
-                .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(Color(.secondaryLabel))
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 16)
-
-            HStack(spacing: 10) {
-                ForEach(ScheduledActivity.allCases) { activity in
-                    let isSelected = selectedActivity == activity
-                    Button {
-                        selectActivity(activity)
-                    } label: {
-                        HStack(spacing: 6) {
-                            Image(systemName: activity.icon)
-                            Text(activity.label)
-                                .fontWeight(.semibold)
+            HStack {
+                Text("Weekly Plan")
+                    .font(.subheadline).fontWeight(.semibold)
+                    .foregroundStyle(Color(.secondaryLabel))
+                Spacer()
+                // Legend
+                HStack(spacing: 10) {
+                    ForEach(ScheduledActivity.allCases) { a in
+                        HStack(spacing: 3) {
+                            Image(systemName: a.icon).font(.system(size: 9))
+                            Text(a.label).font(.system(size: 10))
                         }
-                        .font(.subheadline)
-                        .frame(maxWidth: .infinity)
-                        .padding(.vertical, 10)
-                        .background(isSelected ? Color.accentColor : Color(.systemBackground))
-                        .foregroundStyle(isSelected ? .white : Color(.label))
-                        .clipShape(RoundedRectangle(cornerRadius: 12))
-                        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
+                        .foregroundStyle(Color(.secondaryLabel))
                     }
-                    .buttonStyle(.plain)
+                }
+            }
+            .padding(.horizontal, 16)
+
+            HStack(spacing: 6) {
+                ForEach(currentWeekDays, id: \.self) { date in
+                    dayCell(for: date)
                 }
             }
             .padding(.horizontal, 16)
         }
     }
 
-    private func selectActivity(_ activity: ScheduledActivity) {
-        if selectedActivity == activity {
-            // Tap again to deselect
-            scheduledActivityRaw = ""
-            scheduledActivityDate = ""
-        } else {
-            scheduledActivityRaw  = activity.rawValue
-            scheduledActivityDate = todayKey
+    @ViewBuilder
+    private func dayCell(for date: Date) -> some View {
+        let key = dateKey(for: date)
+        let activity = weeklySchedule[key].flatMap { ScheduledActivity(rawValue: $0) }
+        let isToday = Calendar.current.isDateInToday(date)
+        let isPast  = date < Calendar.current.startOfDay(for: Date())
+
+        Button { cycleActivity(for: key, current: activity) } label: {
+            VStack(spacing: 4) {
+                Text(date.formatted(.dateTime.weekday(.narrow)))
+                    .font(.system(size: 10, weight: .semibold))
+                    .textCase(.uppercase)
+                    .foregroundStyle(isToday ? .white : Color(.secondaryLabel))
+
+                Text(date.formatted(.dateTime.day()))
+                    .font(.system(size: 15, weight: .bold, design: .rounded))
+                    .foregroundStyle(isToday ? .white : (isPast ? Color(.tertiaryLabel) : Color(.label)))
+
+                if let activity {
+                    Image(systemName: activity.icon)
+                        .font(.system(size: 11))
+                        .foregroundStyle(isToday ? .white : Color.accentColor)
+                } else {
+                    Circle()
+                        .fill(isToday ? Color.white.opacity(0.4) : Color(.systemGray4))
+                        .frame(width: 5, height: 5)
+                }
+            }
+            .frame(maxWidth: .infinity)
+            .padding(.vertical, 9)
+            .background(
+                isToday
+                    ? Color.accentColor
+                    : Color(.systemBackground)
+            )
+            .clipShape(RoundedRectangle(cornerRadius: 10))
+            .overlay(
+                RoundedRectangle(cornerRadius: 10)
+                    .stroke(
+                        activity != nil && !isToday ? Color.accentColor.opacity(0.45) : Color.clear,
+                        lineWidth: 1.5
+                    )
+            )
+            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 1)
+        }
+        .buttonStyle(.plain)
+    }
+
+    private func dateKey(for date: Date) -> String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: date)
+        return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
+    }
+
+    /// Cycles the activity for a given day: none → rest → run → workout → none.
+    private func cycleActivity(for key: String, current: ScheduledActivity?) {
+        var schedule = weeklySchedule
+        switch current {
+        case nil:      schedule[key] = ScheduledActivity.rest.rawValue
+        case .rest:    schedule[key] = ScheduledActivity.run.rawValue
+        case .run:     schedule[key] = ScheduledActivity.workout.rawValue
+        case .workout: schedule.removeValue(forKey: key)
+        }
+        if let data = try? JSONEncoder().encode(schedule),
+           let json = String(data: data, encoding: .utf8) {
+            weeklyScheduleJSON = json
         }
     }
 
