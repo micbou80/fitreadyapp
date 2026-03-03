@@ -45,6 +45,7 @@
 		BF0000000000000000000067 /* StatusChip.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000071 /* StatusChip.swift */; };
 		BF0000000000000000000068 /* MiniRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000072 /* MiniRing.swift */; };
 		BF0000000000000000000069 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000073 /* HapticsManager.swift */; };
+		BF000000000000000000007E /* WeekCalendarStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000074 /* WeekCalendarStrip.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -89,6 +90,7 @@
 		BF0000000000000000000071 /* StatusChip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusChip.swift; sourceTree = "<group>"; };
 		BF0000000000000000000072 /* MiniRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniRing.swift; sourceTree = "<group>"; };
 		BF0000000000000000000073 /* HapticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticsManager.swift; sourceTree = "<group>"; };
+		BF0000000000000000000074 /* WeekCalendarStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekCalendarStrip.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -226,6 +228,7 @@
 				BF000000000000000000006C /* ReinforcementSection.swift */,
 				BF000000000000000000006D /* CollapsedStatusSection.swift */,
 				BF000000000000000000006E /* ReadinessDetailsSheet.swift */,
+				BF0000000000000000000074 /* WeekCalendarStrip.swift */,
 			);
 			path = Today;
 			sourceTree = "<group>";
@@ -335,6 +338,7 @@
 				BF0000000000000000000067 /* StatusChip.swift in Sources */,
 				BF0000000000000000000068 /* MiniRing.swift in Sources */,
 				BF0000000000000000000069 /* HapticsManager.swift in Sources */,
+				BF000000000000000000007E /* WeekCalendarStrip.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

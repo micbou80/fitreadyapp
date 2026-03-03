@@ -1,6 +1,6 @@
 import Foundation
 
-struct DailyMetrics: Identifiable {
+struct DailyMetrics: Identifiable, Equatable {
     var id: Date { date }
     let date: Date
     let hrv: Double?        // ms (SDNN)

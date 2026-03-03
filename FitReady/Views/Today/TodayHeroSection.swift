@@ -9,11 +9,6 @@ struct TodayHeroSection: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
 
-            // Date
-            Text(Date().formatted(.dateTime.weekday(.wide).month().day()))
-                .font(DS.Typography.caption())
-                .foregroundStyle(Color(.secondaryLabel))
-
             // Accessibility state label (small chip)
             Text(vm.readinessState.accessibilityLabel.uppercased())
                 .font(DS.Typography.label())
