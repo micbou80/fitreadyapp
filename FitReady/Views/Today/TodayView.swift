@@ -1,15 +1,14 @@
 import SwiftUI
-import PhotosUI
 
 /// The V2 Today screen: decision-first, low-friction daily guidance.
 ///
 /// Layout (top → bottom):
-///   1. WeekCalendarStrip     — current week with today's readiness badge
+///   1. WeekCalendarStrip     — "Today" header + profile nav + full week plan badges
 ///   2. TodayHeroSection      — state + headline + reassurance + reason + "See details"
 ///   3. PrimaryActionSection  — single recommended workout CTA
-///   4. SecondaryActionsSection — Log meal + mobility/steps
+///   4. SecondaryActionsSection — Scan meal + mobility/steps
 ///   5. ReinforcementSection  — momentum ring + win
-///   6. CollapsedStatusSection — steps / active kcal / protein chips (expandable)
+///   6. CollapsedStatusSection — steps / calories / protein stat cells + tip
 ///
 /// Uses mock data on init; wires to live HealthKit data via `updateFromHealthKit()`.
 struct TodayView: View {
@@ -17,10 +16,8 @@ struct TodayView: View {
     @EnvironmentObject private var healthKit: HealthKitManager
     @StateObject private var vm = TodayViewModel(mockState: .yellow)
 
-    // Profile picture
-    @AppStorage("profilePhotoData")         private var profilePhotoData: Data   = Data()
-    @State private var showingProfilePicker = false
-    @State private var selectedProfilePhoto: PhotosPickerItem?
+    // Scanned meals (fallback when HealthKit nutrition is unavailable)
+    @AppStorage("mealsJSON") private var mealsJSON: String = "[]"
 
     // Settings needed to compute ReadinessScore + MacroTargets
     @AppStorage("baselineDays")          private var baselineDays: Int    = 7
@@ -74,6 +71,26 @@ struct TodayView: View {
         return ReadinessEngine.compute(today: today, baseline: healthKit.baselineMetrics, settings: settings)
     }
 
+    private var todayKey: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.string(from: Date())
+    }
+
+    /// Totals from scanned/logged meals for today — used as fallback when HealthKit
+    /// doesn't have dietary data.
+    private var mealTotals: (kcal: Double?, protein: Double?, fat: Double?, carbs: Double?)? {
+        guard let meals = try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8)) else { return nil }
+        let today = meals.filter { $0.date == todayKey }
+        guard !today.isEmpty else { return nil }
+        return (
+            kcal:    today.reduce(0) { $0 + $1.kcal },
+            protein: today.reduce(0) { $0 + $1.proteinG },
+            fat:     today.reduce(0) { $0 + $1.fatG },
+            carbs:   today.reduce(0) { $0 + $1.carbsG }
+        )
+    }
+
     // MARK: - Body
 
     var body: some View {
@@ -96,73 +113,24 @@ struct TodayView: View {
                 }
             }
             .navigationBarTitleDisplayMode(.inline)
-            .toolbar {
-                ToolbarItem(placement: .navigationBarTrailing) {
-                    profileAvatarButton
-                }
-            }
             .sheet(isPresented: $vm.detailsSheetVisible) {
                 ReadinessDetailsSheet(vm: vm)
             }
-            .photosPicker(
-                isPresented: $showingProfilePicker,
-                selection: $selectedProfilePhoto,
-                matching: .images
-            )
         }
         .onAppear            { updateFromHealthKit() }
-        // Observe all HealthKit signals — including baselineMetrics which was missing before
         .onChange(of: healthKit.todayMetrics)     { _, _ in updateFromHealthKit() }
         .onChange(of: healthKit.baselineMetrics)  { _, _ in updateFromHealthKit() }
         .onChange(of: healthKit.todayKcal)        { _, _ in updateFromHealthKit() }
         .onChange(of: healthKit.todaySteps)       { _, _ in updateFromHealthKit() }
         .onChange(of: healthKit.todayActiveKcal)  { _, _ in updateFromHealthKit() }
-        // Resize and save selected profile photo
-        .onChange(of: selectedProfilePhoto) { _, item in
-            Task {
-                guard let data = try? await item?.loadTransferable(type: Data.self),
-                      let src  = UIImage(data: data) else { return }
-                let size  = CGSize(width: 200, height: 200)
-                let small = UIGraphicsImageRenderer(size: size).image { _ in
-                    src.draw(in: CGRect(origin: .zero, size: size))
-                }
-                if let jpeg = small.jpegData(compressionQuality: 0.75) {
-                    profilePhotoData = jpeg
-                }
-            }
-        }
-    }
-
-    // MARK: - Profile avatar
-
-    private var profileAvatarButton: some View {
-        Button { showingProfilePicker = true } label: {
-            profileAvatar
-        }
-        .buttonStyle(.plain)
-    }
-
-    @ViewBuilder
-    private var profileAvatar: some View {
-        if !profilePhotoData.isEmpty, let img = UIImage(data: profilePhotoData) {
-            Image(uiImage: img)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 34, height: 34)
-                .clipShape(Circle())
-        } else {
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
-                .foregroundStyle(Color(.secondaryLabel))
-                .frame(width: 34, height: 34)
-        }
+        .onChange(of: mealsJSON)                  { _, _ in updateFromHealthKit() }
     }
 
     // MARK: - HealthKit sync
 
     private func updateFromHealthKit() {
         guard let score = readinessScore else { return }
-        vm.update(from: score, healthKit: healthKit, macroTargets: macroTargets)
+        vm.update(from: score, healthKit: healthKit, macroTargets: macroTargets, mealTotals: mealTotals)
     }
 }
 

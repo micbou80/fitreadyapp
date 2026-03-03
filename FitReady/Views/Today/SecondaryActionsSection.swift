@@ -1,9 +1,20 @@
 import SwiftUI
 
-/// Up to 2 secondary action cards shown as a horizontal pair.
+/// Up to 2 secondary action cards.
+/// The "Scan meal" card (kind == .scanMeal) opens FoodScannerSheet directly.
 struct SecondaryActionsSection: View {
 
     @ObservedObject var vm: TodayViewModel
+
+    @AppStorage("anthropicAPIKey") private var apiKey:    String = ""
+    @AppStorage("mealsJSON")       private var mealsJSON: String = "[]"
+    @State private var showingScanner = false
+
+    private var todayKey: String {
+        let fmt = DateFormatter()
+        fmt.dateFormat = "yyyy-MM-dd"
+        return fmt.string(from: Date())
+    }
 
     var body: some View {
         HStack(spacing: DS.Spacing.md) {
@@ -11,11 +22,19 @@ struct SecondaryActionsSection: View {
                 secondaryCard(action)
             }
         }
+        .sheet(isPresented: $showingScanner) {
+            FoodScannerSheet(apiKey: apiKey, todayKey: todayKey) { entry in
+                saveMealEntry(entry)
+            }
+        }
     }
 
     @ViewBuilder
     private func secondaryCard(_ action: SecondaryAction) -> some View {
         Button {
+            if action.kind == .scanMeal {
+                showingScanner = true
+            }
             Haptics.impact(.light)
         } label: {
             VStack(spacing: DS.Spacing.sm) {
@@ -40,5 +59,16 @@ struct SecondaryActionsSection: View {
             .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
         }
         .buttonStyle(.plain)
+    }
+
+    // MARK: - Meal persistence
+
+    private func saveMealEntry(_ entry: MealEntry) {
+        var meals = (try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8))) ?? []
+        meals.append(entry)
+        if let data = try? JSONEncoder().encode(meals),
+           let json = String(data: data, encoding: .utf8) {
+            mealsJSON = json
+        }
     }
 }

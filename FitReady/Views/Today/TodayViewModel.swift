@@ -42,9 +42,11 @@ final class TodayViewModel: ObservableObject {
     // MARK: - HealthKit integration
 
     /// Derives all published state from a live ReadinessScore + HealthKitManager data.
+    /// `mealTotals` provides scanned-meal fallback when HealthKit nutrition is unavailable.
     func update(from score: ReadinessScore,
                 healthKit: HealthKitManager,
-                macroTargets: MacroTargets?) {
+                macroTargets: MacroTargets?,
+                mealTotals: (kcal: Double?, protein: Double?, fat: Double?, carbs: Double?)? = nil) {
 
         let state: ReadinessState
         switch score.verdict {
@@ -53,14 +55,15 @@ final class TodayViewModel: ObservableObject {
         case .rest:  state = .red
         }
 
+        // Priority: HealthKit > scanned meals > 0
         let nutrition = NutritionSummary(
-            kcalConsumed:    Int(healthKit.todayKcal    ?? 0),
+            kcalConsumed:    Int(healthKit.todayKcal     ?? mealTotals?.kcal    ?? 0),
             kcalTarget:      macroTargets?.kcal      ?? 2000,
-            proteinConsumed: Int(healthKit.todayProteinG ?? 0),
+            proteinConsumed: Int(healthKit.todayProteinG ?? mealTotals?.protein ?? 0),
             proteinTarget:   macroTargets?.proteinG  ?? 150,
-            fatConsumed:     Int(healthKit.todayFatG  ?? 0),
+            fatConsumed:     Int(healthKit.todayFatG     ?? mealTotals?.fat     ?? 0),
             fatTarget:       macroTargets?.fatG      ?? 65,
-            carbsConsumed:   Int(healthKit.todayCarbsG ?? 0),
+            carbsConsumed:   Int(healthKit.todayCarbsG   ?? mealTotals?.carbs   ?? 0),
             carbsTarget:     macroTargets?.carbsG    ?? 200
         )
         let activity = ActivitySummary(

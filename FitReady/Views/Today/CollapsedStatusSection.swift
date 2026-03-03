@@ -81,8 +81,9 @@ struct CollapsedStatusSection: View {
     // MARK: - Formatting
 
     private var formattedSteps: String {
-        let s = vm.collapsedStats.steps
-        return s >= 1_000 ? String(format: "%.1fk", Double(s) / 1_000) : "\(s)"
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .decimal
+        return fmt.string(from: NSNumber(value: vm.collapsedStats.steps)) ?? "\(vm.collapsedStats.steps)"
     }
 
     private var formattedKcal: String {

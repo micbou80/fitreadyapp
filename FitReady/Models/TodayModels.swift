@@ -29,8 +29,10 @@ struct TodayAction {
 // MARK: - Secondary actions
 
 struct SecondaryAction: Identifiable {
+    enum Kind { case scanMeal, general }
     let icon:  String
     let label: String
+    let kind:  Kind
     var id: String { label }
 }
 
@@ -154,12 +156,12 @@ enum TodayMockData {
     }
 
     static func makeSecondary(for state: ReadinessState) -> [SecondaryAction] {
-        let logMeal = SecondaryAction(icon: "fork.knife", label: "Log meal")
+        let scanMeal = SecondaryAction(icon: "camera.viewfinder", label: "Scan meal", kind: .scanMeal)
         switch state {
         case .green:
-            return [logMeal, SecondaryAction(icon: "figure.walk", label: "Steps top-up\n10 min")]
+            return [scanMeal, SecondaryAction(icon: "figure.walk", label: "Steps top-up\n10 min", kind: .general)]
         case .yellow, .red:
-            return [logMeal, SecondaryAction(icon: "figure.flexibility", label: "Quick mobility\n5 min")]
+            return [scanMeal, SecondaryAction(icon: "figure.flexibility", label: "Quick mobility\n5 min", kind: .general)]
         }
     }
 
