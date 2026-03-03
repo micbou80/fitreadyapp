@@ -30,6 +30,7 @@
 		BF0000000000000000000015 /* MealEntry.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000038 /* MealEntry.swift */; };
 		BF0000000000000000000016 /* AnthropicService.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000039 /* AnthropicService.swift */; };
 		BF0000000000000000000017 /* FoodScannerSheet.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000003A /* FoodScannerSheet.swift */; };
+		BF0000000000000000000082 /* AppColors.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000083 /* AppColors.swift */; };
 		BF0000000000000000000018 /* DesignTokens.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000003B /* DesignTokens.swift */; };
 		BF0000000000000000000019 /* TodayModels.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000003C /* TodayModels.swift */; };
 		BF000000000000000000001A /* TodayViewModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF000000000000000000003D /* TodayViewModel.swift */; };
@@ -78,6 +79,7 @@
 		BF0000000000000000000038 /* MealEntry.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MealEntry.swift; sourceTree = "<group>"; };
 		BF0000000000000000000039 /* AnthropicService.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AnthropicService.swift; sourceTree = "<group>"; };
 		BF000000000000000000003A /* FoodScannerSheet.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodScannerSheet.swift; sourceTree = "<group>"; };
+		BF0000000000000000000083 /* AppColors.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppColors.swift; sourceTree = "<group>"; };
 		BF000000000000000000003B /* DesignTokens.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DesignTokens.swift; sourceTree = "<group>"; };
 		BF000000000000000000003C /* TodayModels.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayModels.swift; sourceTree = "<group>"; };
 		BF000000000000000000003D /* TodayViewModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = TodayViewModel.swift; sourceTree = "<group>"; };
@@ -221,6 +223,7 @@
 		BF000000000000000000004A /* Theme */ = {
 			isa = PBXGroup;
 			children = (
+				BF0000000000000000000083 /* AppColors.swift */,
 				BF000000000000000000003B /* DesignTokens.swift */,
 			);
 			path = Theme;
@@ -332,6 +335,7 @@
 				BF0000000000000000000015 /* MealEntry.swift in Sources */,
 				BF0000000000000000000016 /* AnthropicService.swift in Sources */,
 				BF0000000000000000000017 /* FoodScannerSheet.swift in Sources */,
+				BF0000000000000000000082 /* AppColors.swift in Sources */,
 				BF0000000000000000000018 /* DesignTokens.swift in Sources */,
 				BF0000000000000000000019 /* TodayModels.swift in Sources */,
 				BF000000000000000000001A /* TodayViewModel.swift in Sources */,

@@ -108,10 +108,10 @@ struct FoodView: View {
     }
 
     private let macroColors: [(Color, String)] = [
-        (Color(red: 0.58, green: 0.35, blue: 0.96), "kcal"),
-        (Color(red: 0.20, green: 0.78, blue: 0.35), "protein"),
-        (Color(red: 1.00, green: 0.55, blue: 0.26), "fat"),
-        (Color(red: 0.26, green: 0.59, blue: 0.98), "carbs"),
+        (AppColors.dataCalories, "kcal"),
+        (AppColors.dataProtein,  "protein"),
+        (AppColors.dataFat,      "fat"),
+        (AppColors.dataCarbs,    "carbs"),
     ]
 
     // MARK: - Body
@@ -119,7 +119,7 @@ struct FoodView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
 
                 ScrollView {
                     VStack(spacing: 20) {
@@ -215,10 +215,10 @@ struct FoodView: View {
                     Text("Protein Target").font(.subheadline).fontWeight(.semibold)
                     Spacer()
                     Text(String(format: "%.1f g / kg", proteinPerKg))
-                        .font(.subheadline).foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .font(.subheadline).foregroundStyle(AppColors.dataProtein)
                 }
                 Slider(value: $proteinPerKg, in: 1.4...2.4, step: 0.1)
-                    .tint(Color(red: 0.20, green: 0.78, blue: 0.35))
+                    .tint(AppColors.dataProtein)
             }
 
             // Fat floor
@@ -227,24 +227,24 @@ struct FoodView: View {
                     Text("Minimum Fat").font(.subheadline).fontWeight(.semibold)
                     Spacer()
                     Text(String(format: "%.0f%% of calories", fatFloorPct))
-                        .font(.subheadline).foregroundStyle(Color(red: 1.00, green: 0.55, blue: 0.26))
+                        .font(.subheadline).foregroundStyle(AppColors.dataFat)
                 }
                 Slider(value: $fatFloorPct, in: 20...35, step: 1)
-                    .tint(Color(red: 1.00, green: 0.55, blue: 0.26))
+                    .tint(AppColors.dataFat)
             }
 
             Button("Calculate My Macros") {
                 saveSetup()
             }
             .buttonStyle(.borderedProminent)
-            .tint(.purple)
+            .tint(AppColors.accent)
             .disabled(heightText.isEmpty || ageText.isEmpty || biologicalSex.isEmpty)
             .frame(maxWidth: .infinity)
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
         .onAppear {
             if heightCm > 0 { heightText = String(Int(heightCm)) }
             if ageYears > 0 { ageText    = String(ageYears) }
@@ -264,7 +264,7 @@ struct FoodView: View {
                 Spacer()
                 Text("\(targets.kcal)")
                     .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(Color(red: 0.58, green: 0.35, blue: 0.96))
+                    .foregroundStyle(AppColors.dataCalories)
                 + Text(" kcal")
                     .font(.subheadline)
                     .foregroundStyle(Color(.secondaryLabel))
@@ -272,13 +272,13 @@ struct FoodView: View {
 
             HStack(spacing: 0) {
                 macroChip(value: "\(targets.proteinG)g", label: "protein",
-                          color: Color(red: 0.20, green: 0.78, blue: 0.35))
+                          color: AppColors.dataProtein)
                 Text(" · ").foregroundStyle(Color(.tertiaryLabel))
                 macroChip(value: "\(targets.fatG)g", label: "fat",
-                          color: Color(red: 1.00, green: 0.55, blue: 0.26))
+                          color: AppColors.dataFat)
                 Text(" · ").foregroundStyle(Color(.tertiaryLabel))
                 macroChip(value: "\(targets.carbsG)g", label: "carbs",
-                          color: Color(red: 0.26, green: 0.59, blue: 0.98))
+                          color: AppColors.dataCarbs)
             }
             .font(.subheadline)
 
@@ -293,9 +293,9 @@ struct FoodView: View {
             .foregroundStyle(Color(.tertiaryLabel))
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Progress rings card
@@ -304,10 +304,10 @@ struct FoodView: View {
     private func progressRingsCard(targets: MacroTargets) -> some View {
         let i = intake
         let data: [(label: String, actual: Double?, target: Int, color: Color, unit: String)] = [
-            ("Calories", i.kcal,    targets.kcal,     Color(red: 0.58, green: 0.35, blue: 0.96), "kcal"),
-            ("Protein",  i.protein, targets.proteinG, Color(red: 0.20, green: 0.78, blue: 0.35), "g"),
-            ("Fat",      i.fat,     targets.fatG,     Color(red: 1.00, green: 0.55, blue: 0.26), "g"),
-            ("Carbs",    i.carbs,   targets.carbsG,   Color(red: 0.26, green: 0.59, blue: 0.98), "g"),
+            ("Calories", i.kcal,    targets.kcal,     AppColors.dataCalories, "kcal"),
+            ("Protein",  i.protein, targets.proteinG, AppColors.dataProtein,  "g"),
+            ("Fat",      i.fat,     targets.fatG,     AppColors.dataFat,      "g"),
+            ("Carbs",    i.carbs,   targets.carbsG,   AppColors.dataCarbs,    "g"),
         ]
 
         VStack(alignment: .leading, spacing: 14) {
@@ -328,9 +328,9 @@ struct FoodView: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     @ViewBuilder
@@ -410,7 +410,7 @@ struct FoodView: View {
                     Label("Scan", systemImage: "camera.fill")
                         .font(.subheadline).fontWeight(.semibold)
                         .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(Color.accentColor)
+                        .background(AppColors.accent)
                         .foregroundStyle(.white)
                         .clipShape(Capsule())
                 }
@@ -457,15 +457,15 @@ struct FoodView: View {
                     saveManualAsMealEntry()
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(.purple)
+                .tint(AppColors.accent)
                 .disabled(manualKcalText.isEmpty)
                 .frame(maxWidth: .infinity)
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     @ViewBuilder
@@ -474,9 +474,9 @@ struct FoodView: View {
             // Source icon
             Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
                 .font(.system(size: 11))
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(AppColors.accent)
                 .frame(width: 22, height: 22)
-                .background(Color.accentColor.opacity(0.12))
+                .background(AppColors.accent.opacity(0.12))
                 .clipShape(Circle())
 
             VStack(alignment: .leading, spacing: 2) {
@@ -493,9 +493,9 @@ struct FoodView: View {
             // Macro chips
             HStack(spacing: 6) {
                 mealMacroChip(value: Int(meal.kcal), unit: "kcal",
-                              color: Color(red: 0.58, green: 0.35, blue: 0.96))
+                              color: AppColors.dataCalories)
                 mealMacroChip(value: Int(meal.proteinG), unit: "P",
-                              color: Color(red: 0.20, green: 0.78, blue: 0.35))
+                              color: AppColors.dataProtein)
             }
 
             // Delete button
@@ -509,7 +509,7 @@ struct FoodView: View {
             .buttonStyle(.plain)
         }
         .padding(.horizontal, 10).padding(.vertical, 8)
-        .background(Color(.systemGroupedBackground))
+        .background(AppColors.background)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -536,7 +536,7 @@ struct FoodView: View {
                 .focused($focusedField, equals: field)
                 .font(.system(size: 22, weight: .bold, design: .rounded))
                 .padding(10)
-                .background(Color(.systemGray6))
+                .background(AppColors.background)
                 .clipShape(RoundedRectangle(cornerRadius: 10))
         }
     }
@@ -555,7 +555,7 @@ struct FoodView: View {
                     withAnimation(.spring(response: 0.35)) { showingSettings.toggle() }
                 }
                 .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(Color.accentColor)
+                .foregroundStyle(AppColors.accent)
             }
 
             if showingSettings {
@@ -580,10 +580,10 @@ struct FoodView: View {
                         Spacer()
                         Text(String(format: "%.1f g/kg", proteinPerKg))
                             .font(.subheadline)
-                            .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                            .foregroundStyle(AppColors.dataProtein)
                     }
                     Slider(value: $proteinPerKg, in: 1.4...2.4, step: 0.1)
-                        .tint(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .tint(AppColors.dataProtein)
                 }
 
                 // Fat floor
@@ -593,10 +593,10 @@ struct FoodView: View {
                         Spacer()
                         Text(String(format: "%.0f%% of kcal", fatFloorPct))
                             .font(.subheadline)
-                            .foregroundStyle(Color(red: 1.00, green: 0.55, blue: 0.26))
+                            .foregroundStyle(AppColors.dataFat)
                     }
                     Slider(value: $fatFloorPct, in: 20...35, step: 1)
-                        .tint(Color(red: 1.00, green: 0.55, blue: 0.26))
+                        .tint(AppColors.dataFat)
                 }
 
                 // Reset setup
@@ -621,9 +621,9 @@ struct FoodView: View {
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Reusable sub-views
@@ -666,7 +666,7 @@ struct FoodView: View {
         }
         .foregroundStyle(Color(.secondaryLabel))
         .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(Color(.systemGray6))
+        .background(AppColors.background)
         .clipShape(Capsule())
     }
 

@@ -129,7 +129,7 @@ struct MainReadinessView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
 
                 if let error = healthKit.authError {
                     errorView(message: error)
@@ -229,13 +229,13 @@ struct MainReadinessView: View {
                 icon: "figure.walk",
                 value: healthKit.todaySteps.map { String(format: "%.0f", $0) } ?? "—",
                 label: "Steps",
-                color: Color(red: 0.20, green: 0.78, blue: 0.35)
+                color: AppColors.greenBase
             )
             activityCell(
                 icon: "flame.fill",
                 value: healthKit.todayActiveKcal.map { String(format: "%.0f", $0) } ?? "—",
                 label: "Active kcal",
-                color: Color(red: 1.00, green: 0.55, blue: 0.26)
+                color: AppColors.amberBase
             )
         }
         .padding(.horizontal, 16)
@@ -263,9 +263,9 @@ struct MainReadinessView: View {
             Spacer()
         }
         .padding(14)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 6, x: 0, y: 2)
         .frame(maxWidth: .infinity)
     }
 
@@ -321,7 +321,7 @@ struct MainReadinessView: View {
                 if let activity {
                     Image(systemName: activity.icon)
                         .font(.system(size: 11))
-                        .foregroundStyle(isToday ? .white : Color.accentColor)
+                        .foregroundStyle(isToday ? .white : AppColors.accent)
                 } else {
                     Circle()
                         .fill(isToday ? Color.white.opacity(0.4) : Color(.systemGray4))
@@ -330,16 +330,16 @@ struct MainReadinessView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
-            .background(isToday ? Color.accentColor : Color(.systemBackground))
+            .background(isToday ? AppColors.accent : AppColors.card)
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
                     .stroke(
-                        activity != nil && !isToday ? Color.accentColor.opacity(0.45) : Color.clear,
+                        activity != nil && !isToday ? AppColors.accent.opacity(0.45) : Color.clear,
                         lineWidth: 1.5
                     )
             )
-            .shadow(color: .black.opacity(0.05), radius: 4, x: 0, y: 1)
+            .shadow(color: AppColors.shadowColor, radius: 4, x: 0, y: 1)
         }
         .buttonStyle(.plain)
     }

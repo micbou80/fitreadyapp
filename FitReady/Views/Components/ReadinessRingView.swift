@@ -10,9 +10,9 @@ struct ReadinessRingView: View {
     private let ringWidth: CGFloat = 18
 
     // Colors for the three zones (muted so the active arc pops)
-    private let restColor  = Color(red: 0.88, green: 0.36, blue: 0.36)
-    private let lightColor = Color(red: 1.00, green: 0.55, blue: 0.26)
-    private let readyColor = Color(red: 0.20, green: 0.78, blue: 0.35)
+    private let restColor  = AppColors.redBase
+    private let lightColor = AppColors.amberBase
+    private let readyColor = AppColors.greenBase
 
     // totalScore (-3…+3) linearly mapped to 0-100
     private var displayScore: Int {
@@ -116,7 +116,7 @@ struct ReadinessRingView: View {
     private func tick(at fraction: Double) -> some View {
         let angle = fraction * 360.0 - 90.0
         return Capsule()
-            .fill(Color(.systemGroupedBackground))
+            .fill(AppColors.background)
             .frame(width: ringWidth + 2, height: 3)
             .offset(y: -(ringSize / 2))
             .rotationEffect(.degrees(angle))

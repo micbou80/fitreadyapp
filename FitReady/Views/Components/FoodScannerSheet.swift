@@ -87,7 +87,7 @@ struct FoodScannerSheet: View {
                 }
                 .padding(20)
             }
-            .background(Color(.systemGroupedBackground).ignoresSafeArea())
+            .background(AppColors.background.ignoresSafeArea())
             .navigationTitle("Scan Meal")
             .navigationBarTitleDisplayMode(.inline)
             .toolbar {
@@ -117,9 +117,9 @@ struct FoodScannerSheet: View {
             // Image preview or placeholder
             ZStack {
                 RoundedRectangle(cornerRadius: 16)
-                    .fill(Color(.systemBackground))
+                    .fill(AppColors.card)
                     .frame(height: 220)
-                    .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+                    .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
 
                 if let img = selectedImage {
                     Image(uiImage: img)
@@ -148,14 +148,14 @@ struct FoodScannerSheet: View {
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.borderedProminent)
-                .tint(Color.accentColor)
+                .tint(AppColors.accent)
 
                 PhotosPicker(selection: $pickerItem, matching: .images) {
                     Label("Library", systemImage: "photo.on.rectangle")
                         .frame(maxWidth: .infinity)
                 }
                 .buttonStyle(.bordered)
-                .tint(Color.accentColor)
+                .tint(AppColors.accent)
             }
 
             // Portion size picker
@@ -172,7 +172,7 @@ struct FoodScannerSheet: View {
                                 .font(.system(size: 15, weight: .semibold, design: .rounded))
                                 .frame(maxWidth: .infinity)
                                 .padding(.vertical, 10)
-                                .background(selected ? Color.accentColor : Color(.systemBackground))
+                                .background(selected ? AppColors.accent : AppColors.card)
                                 .foregroundStyle(selected ? .white : Color(.label))
                                 .clipShape(RoundedRectangle(cornerRadius: 10))
                                 .shadow(color: .black.opacity(selected ? 0 : 0.05), radius: 4, x: 0, y: 1)
@@ -183,9 +183,9 @@ struct FoodScannerSheet: View {
                 }
             }
             .padding(16)
-            .background(Color(.systemBackground))
+            .background(AppColors.card)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
 
             // Analyse button
             Button {
@@ -196,7 +196,7 @@ struct FoodScannerSheet: View {
                     .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color.accentColor)
+            .tint(AppColors.accent)
             .disabled(selectedImage == nil)
             .controlSize(.large)
         }
@@ -212,7 +212,7 @@ struct FoodScannerSheet: View {
                     .scaledToFill()
                     .frame(height: 200)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+                    .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
             }
 
             VStack(spacing: 12) {
@@ -224,9 +224,9 @@ struct FoodScannerSheet: View {
             }
             .frame(maxWidth: .infinity)
             .padding(24)
-            .background(Color(.systemBackground))
+            .background(AppColors.card)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
         }
     }
 
@@ -240,7 +240,7 @@ struct FoodScannerSheet: View {
                     .scaledToFill()
                     .frame(height: 160)
                     .clipShape(RoundedRectangle(cornerRadius: 16))
-                    .shadow(color: .black.opacity(0.08), radius: 8, x: 0, y: 2)
+                    .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
             }
 
             // Meal name header
@@ -256,9 +256,9 @@ struct FoodScannerSheet: View {
             }
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(16)
-            .background(Color(.systemBackground))
+            .background(AppColors.card)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
 
             // Editable macro fields
             VStack(alignment: .leading, spacing: 14) {
@@ -270,19 +270,19 @@ struct FoodScannerSheet: View {
 
                 LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
                     reviewField(label: "Calories", unit: "kcal",
-                                color: Color(red: 0.58, green: 0.35, blue: 0.96), text: $kcalText)
+                                color: AppColors.dataCalories, text: $kcalText)
                     reviewField(label: "Protein",  unit: "g",
-                                color: Color(red: 0.20, green: 0.78, blue: 0.35), text: $proteinText)
+                                color: AppColors.dataProtein, text: $proteinText)
                     reviewField(label: "Fat",      unit: "g",
-                                color: Color(red: 1.00, green: 0.55, blue: 0.26), text: $fatText)
+                                color: AppColors.dataFat, text: $fatText)
                     reviewField(label: "Carbs",    unit: "g",
-                                color: Color(red: 0.26, green: 0.59, blue: 0.98), text: $carbsText)
+                                color: AppColors.dataCarbs, text: $carbsText)
                 }
             }
             .padding(16)
-            .background(Color(.systemBackground))
+            .background(AppColors.card)
             .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+            .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
 
             // Log button
             Button { saveAndDismiss() } label: {
@@ -291,7 +291,7 @@ struct FoodScannerSheet: View {
                     .padding(.vertical, 4)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color.accentColor)
+            .tint(AppColors.accent)
             .controlSize(.large)
             .disabled(kcalText.isEmpty)
 
@@ -326,7 +326,7 @@ struct FoodScannerSheet: View {
                 .foregroundStyle(Color(.label))
         }
         .padding(12)
-        .background(Color(.systemGroupedBackground))
+        .background(AppColors.background)
         .clipShape(RoundedRectangle(cornerRadius: 10))
     }
 
@@ -336,7 +336,7 @@ struct FoodScannerSheet: View {
         VStack(spacing: 16) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .font(.system(size: 40))
-                .foregroundStyle(Color(red: 1.00, green: 0.55, blue: 0.26))
+                .foregroundStyle(AppColors.amberBase)
 
             Text(message)
                 .font(.subheadline)
@@ -351,12 +351,12 @@ struct FoodScannerSheet: View {
                     .frame(maxWidth: .infinity)
             }
             .buttonStyle(.borderedProminent)
-            .tint(Color.accentColor)
+            .tint(AppColors.accent)
         }
         .padding(24)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     // MARK: - Actions

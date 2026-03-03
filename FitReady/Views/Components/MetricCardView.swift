@@ -13,8 +13,8 @@ struct MetricCardView: View {
 
     private var scoreColor: Color {
         switch score {
-        case  1: return Color(red: 0.20, green: 0.78, blue: 0.35)
-        case -1: return Color(red: 0.88, green: 0.36, blue: 0.36)
+        case  1: return AppColors.greenBase
+        case -1: return AppColors.redBase
         default: return Color(.tertiaryLabel)
         }
     }
@@ -70,8 +70,8 @@ struct MetricCardView: View {
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(.horizontal, 12)
         .padding(.vertical, 14)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 14))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 }

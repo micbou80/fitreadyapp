@@ -21,9 +21,9 @@ enum ReadinessVerdict: Equatable {
 
     var color: Color {
         switch self {
-        case .ready: return Color(red: 0.20, green: 0.78, blue: 0.35)
-        case .light: return Color(red: 1.00, green: 0.55, blue: 0.26)
-        case .rest:  return Color(red: 0.88, green: 0.36, blue: 0.36)
+        case .ready: return AppColors.greenBase
+        case .light: return AppColors.amberBase
+        case .rest:  return AppColors.redBase
         }
     }
 

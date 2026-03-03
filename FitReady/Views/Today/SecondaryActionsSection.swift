@@ -40,9 +40,9 @@ struct SecondaryActionsSection: View {
             VStack(spacing: DS.Spacing.sm) {
                 Image(systemName: action.icon)
                     .font(.system(size: 22))
-                    .foregroundStyle(.purple)
+                    .foregroundStyle(AppColors.accent)
                     .frame(width: 46, height: 46)
-                    .background(Color.purple.opacity(0.10))
+                    .background(AppColors.accent.opacity(0.10))
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(action.label)

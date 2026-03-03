@@ -120,7 +120,7 @@ struct ReadinessDetailsSheet: View {
         HStack {
             Image(systemName: icon)
                 .font(.system(size: 14))
-                .foregroundStyle(good ? Color(hex: "1B7D38") : Color(hex: "C0392B"))
+                .foregroundStyle(good ? AppColors.greenText : AppColors.redText)
                 .frame(width: 26)
 
             Text(title)
@@ -134,7 +134,7 @@ struct ReadinessDetailsSheet: View {
                 if let d = delta {
                     Text(d)
                         .font(DS.Typography.caption())
-                        .foregroundStyle(good ? Color(hex: "1B7D38") : Color(hex: "C0392B"))
+                        .foregroundStyle(good ? AppColors.greenText : AppColors.redText)
                 }
             }
         }

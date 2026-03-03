@@ -65,8 +65,8 @@ struct WeekCalendarStrip: View {
     private func planColor(for letter: String, isToday: Bool, isPast: Bool) -> Color {
         let base: Color
         switch letter {
-        case "W": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : Color(hex: "1B7D38")
-        case "L": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : Color(hex: "B45309")
+        case "W": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : AppColors.greenText
+        case "L": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : AppColors.amberText
         default:  base = Color(.systemGray3)
         }
         return isPast && !isToday ? base.opacity(0.35) : base

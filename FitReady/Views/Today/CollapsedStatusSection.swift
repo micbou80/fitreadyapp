@@ -13,21 +13,21 @@ struct CollapsedStatusSection: View {
             HStack(spacing: 0) {
                 statCell(
                     icon:      "figure.walk",
-                    iconColor: Color(hex: "1B7D38"),
+                    iconColor: AppColors.greenText,
                     value:     formattedSteps,
                     label:     "steps"
                 )
                 separator
                 statCell(
                     icon:      "fork.knife",
-                    iconColor: Color(hex: "B45309"),
+                    iconColor: AppColors.amberText,
                     value:     formattedKcal,
                     label:     "/ \(vm.collapsedStats.nutrition.kcalTarget) kcal"
                 )
                 separator
                 statCell(
                     icon:      "dumbbell.fill",
-                    iconColor: .purple,
+                    iconColor: AppColors.accent,
                     value:     formattedProtein,
                     label:     "protein"
                 )
@@ -118,7 +118,7 @@ struct CollapsedStatusSection: View {
 
     private var tipIconColor: Color {
         (vm.collapsedStats.nutrition.proteinRemaining < 1)
-            ? Color(hex: "1B7D38")
-            : Color(hex: "B45309")
+            ? AppColors.greenText
+            : AppColors.amberText
     }
 }

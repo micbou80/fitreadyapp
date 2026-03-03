@@ -37,7 +37,7 @@ struct PersonalSettingsView: View {
                     settingsCard {
                         sectionLabel("Identity")
 
-                        settingRow(icon: "person.fill", iconColor: Color(hex: "5B4FCF"), label: "Name") {
+                        settingRow(icon: "person.fill", iconColor: AppColors.accent, label: "Name") {
                             TextField("Your name", text: $nameText)
                                 .multilineTextAlignment(.trailing)
                                 .focused($focusedField, equals: .name)
@@ -50,9 +50,9 @@ struct PersonalSettingsView: View {
                             HStack(spacing: DS.Spacing.md) {
                                 Image(systemName: "birthday.cake.fill")
                                     .font(.system(size: 14, weight: .medium))
-                                    .foregroundStyle(Color(hex: "B45309"))
+                                    .foregroundStyle(AppColors.amberText)
                                     .frame(width: 28, height: 28)
-                                    .background(Color(hex: "B45309").opacity(0.12))
+                                    .background(AppColors.amberText.opacity(0.12))
                                     .clipShape(RoundedRectangle(cornerRadius: 6))
                                 Text("Birthday")
                                     .font(DS.Typography.body())
@@ -78,20 +78,20 @@ struct PersonalSettingsView: View {
                                 displayedComponents: .date
                             )
                             .datePickerStyle(.graphical)
-                            .tint(.purple)
+                            .tint(AppColors.accent)
                             .padding(.horizontal, DS.Spacing.md)
                         }
 
                         Divider().padding(.leading, 52)
 
-                        settingRow(icon: "person.2.fill", iconColor: Color(hex: "1B7D38"), label: "Biological sex") {
+                        settingRow(icon: "person.2.fill", iconColor: AppColors.greenText, label: "Biological sex") {
                             Picker("", selection: $biologicalSex) {
                                 Text("Male").tag("male")
                                 Text("Female").tag("female")
                                 Text("Prefer not to say").tag("")
                             }
                             .pickerStyle(.menu)
-                            .tint(.purple)
+                            .tint(AppColors.accent)
                         }
                     }
 
@@ -101,7 +101,7 @@ struct PersonalSettingsView: View {
 
                         settingRow(
                             icon: "ruler.fill",
-                            iconColor: Color(hex: "5B4FCF"),
+                            iconColor: AppColors.accent,
                             label: useImperial ? "Height (ft'in\")" : "Height (cm)"
                         ) {
                             TextField(useImperial ? "5'10\"" : "175", text: $heightText)
@@ -115,7 +115,7 @@ struct PersonalSettingsView: View {
 
                         settingRow(
                             icon: "scalemass.fill",
-                            iconColor: Color(hex: "B45309"),
+                            iconColor: AppColors.amberText,
                             label: useImperial ? "Weight (lbs)" : "Weight (kg)"
                         ) {
                             TextField(useImperial ? "175" : "80", text: $weightText)
@@ -139,7 +139,7 @@ struct PersonalSettingsView: View {
                             Spacer()
                             Toggle("", isOn: $useImperial)
                                 .labelsHidden()
-                                .tint(.purple)
+                                .tint(AppColors.accent)
                         }
                         .padding(.horizontal, DS.Spacing.lg)
                         .padding(.vertical, DS.Spacing.md)
@@ -149,29 +149,29 @@ struct PersonalSettingsView: View {
                     settingsCard {
                         sectionLabel("Training")
 
-                        settingRow(icon: "calendar", iconColor: Color(hex: "1B7D38"), label: "Days per week") {
+                        settingRow(icon: "calendar", iconColor: AppColors.greenText, label: "Days per week") {
                             Picker("", selection: $trainingDaysPerWeek) {
                                 ForEach(1...7, id: \.self) { Text("\($0) days").tag($0) }
                             }
                             .pickerStyle(.menu)
-                            .tint(.purple)
+                            .tint(AppColors.accent)
                         }
 
                         Divider().padding(.leading, 52)
 
-                        settingRow(icon: "building.2.fill", iconColor: Color(hex: "5B4FCF"), label: "Location") {
+                        settingRow(icon: "building.2.fill", iconColor: AppColors.accent, label: "Location") {
                             Picker("", selection: $trainingLocation) {
                                 Text("Gym").tag("gym")
                                 Text("Home").tag("home")
                                 Text("Mix").tag("mix")
                             }
                             .pickerStyle(.menu)
-                            .tint(.purple)
+                            .tint(AppColors.accent)
                         }
 
                         Divider().padding(.leading, 52)
 
-                        settingRow(icon: "figure.run", iconColor: Color(hex: "B45309"), label: "Activity level") {
+                        settingRow(icon: "figure.run", iconColor: AppColors.amberText, label: "Activity level") {
                             Picker("", selection: $activityLevel) {
                                 Text("Sedentary").tag("sedentary")
                                 Text("Lightly Active").tag("light")
@@ -179,7 +179,7 @@ struct PersonalSettingsView: View {
                                 Text("Very Active").tag("active")
                             }
                             .pickerStyle(.menu)
-                            .tint(.purple)
+                            .tint(AppColors.accent)
                         }
                     }
 
@@ -193,7 +193,7 @@ struct PersonalSettingsView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
-                        .background(saved ? Color(hex: "1B7D38") : .purple)
+                        .background(saved ? AppColors.greenText : AppColors.accent)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
                     }
                     .animation(.easeInOut(duration: 0.3), value: saved)

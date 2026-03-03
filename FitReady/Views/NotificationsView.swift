@@ -8,16 +8,16 @@ struct NotificationsView: View {
     private let levels: [(key: String, label: String, desc: String, icon: String, color: Color)] = [
         ("everything",   "Give me everything",
          "Workouts, meals, recovery insights, wins — all of it.",
-         "bell.badge.fill",   .purple),
+         "bell.badge.fill",   AppColors.accent),
         ("moderate",     "Moderate",
          "Daily reminders and key recovery alerts only.",
-         "bell.fill",         Color(hex: "1B7D38")),
+         "bell.fill",         AppColors.greenText),
         ("light",        "Super light",
          "Weekly summary and only the most important nudges.",
-         "bell.slash",        Color(hex: "5B4FCF")),
+         "bell.slash",        AppColors.accent),
         ("affirmations", "Affirmations only",
          "Just the motivational messages — nothing else.",
-         "heart.fill",        Color(hex: "B45309")),
+         "heart.fill",        AppColors.amberText),
         ("off",          "Off",
          "No notifications. You're on your own.",
          "bell.slash.fill",   Color(.systemGray3)),
@@ -90,7 +90,7 @@ struct NotificationsView: View {
 
                 if notificationLevel == level.key {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(AppColors.accent)
                 }
             }
             .padding(.vertical, DS.Spacing.md)

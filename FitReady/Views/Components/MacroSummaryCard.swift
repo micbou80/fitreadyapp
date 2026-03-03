@@ -35,36 +35,36 @@ struct MacroSummaryCard: View {
                     label: "kcal",
                     actual: actualKcal.map { Int($0.rounded()) },
                     target: targets.kcal,
-                    color: Color(red: 0.58, green: 0.35, blue: 0.96),  // purple
+                    color: AppColors.dataCalories,
                     format: { "\($0)" }
                 )
                 macroColumn(
                     label: "protein",
                     actual: actualProteinG.map { Int($0.rounded()) },
                     target: targets.proteinG,
-                    color: Color(red: 0.20, green: 0.78, blue: 0.35),  // green
+                    color: AppColors.dataProtein,
                     format: { "\($0)g" }
                 )
                 macroColumn(
                     label: "fat",
                     actual: actualFatG.map { Int($0.rounded()) },
                     target: targets.fatG,
-                    color: Color(red: 1.00, green: 0.55, blue: 0.26),  // orange
+                    color: AppColors.dataFat,
                     format: { "\($0)g" }
                 )
                 macroColumn(
                     label: "carbs",
                     actual: actualCarbsG.map { Int($0.rounded()) },
                     target: targets.carbsG,
-                    color: Color(red: 0.26, green: 0.59, blue: 0.98),  // blue
+                    color: AppColors.dataCarbs,
                     format: { "\($0)g" }
                 )
             }
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     @ViewBuilder
@@ -96,7 +96,7 @@ struct MacroSummaryCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color(.systemGray5))
+                        .fill(Color(.systemGray4))
                         .frame(height: 5)
                     Capsule()
                         .fill(color)

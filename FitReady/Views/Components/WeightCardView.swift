@@ -8,9 +8,7 @@ struct WeightCardView: View {
 
     private var isLosing: Bool { current > goal }
     private var accentColor: Color {
-        isLosing
-            ? Color(red: 1.0, green: 0.55, blue: 0.26)
-            : Color(red: 0.20, green: 0.78, blue: 0.35)
+        isLosing ? AppColors.amberBase : AppColors.greenBase
     }
     private var hasStart: Bool { (start ?? 0) > 0 }
 
@@ -74,10 +72,10 @@ struct WeightCardView: View {
             HStack(spacing: 5) {
                 if current == goal {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .foregroundStyle(AppColors.greenBase)
                     Text("Goal reached!")
                         .fontWeight(.semibold)
-                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .foregroundStyle(AppColors.greenBase)
                 } else {
                     Image(systemName: "arrow.right")
                         .font(.caption.weight(.bold))
@@ -90,9 +88,9 @@ struct WeightCardView: View {
             .font(.subheadline)
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+        .shadow(color: AppColors.shadowColor, radius: 10, x: 0, y: 3)
     }
 
     // MARK: - Sub-views
@@ -146,7 +144,7 @@ struct JourneyTrack: View {
             ZStack(alignment: .topLeading) {
                 // Background track
                 Capsule()
-                    .fill(Color(.systemGray5))
+                    .fill(Color(.systemGray4))
                     .frame(width: w, height: trackH)
                     .offset(y: vCenter)
 
@@ -166,7 +164,7 @@ struct JourneyTrack: View {
                 // Marker: white halo + colored core
                 ZStack {
                     Circle()
-                        .fill(Color(.systemBackground))
+                        .fill(AppColors.card)
                         .frame(width: markerD, height: markerD)
                         .shadow(color: color.opacity(0.35), radius: 5, x: 0, y: 2)
                     Circle()

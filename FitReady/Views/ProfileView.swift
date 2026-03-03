@@ -106,7 +106,7 @@ struct ProfileView: View {
                 PhotosPicker(selection: $selectedPhoto, matching: .images) {
                     Image(systemName: "pencil.circle.fill")
                         .font(.system(size: 28))
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(AppColors.accent)
                         .background(
                             Circle()
                                 .fill(DS.Background.card)
@@ -155,7 +155,7 @@ struct ProfileView: View {
         VStack(spacing: 0) {
             menuRow(
                 icon: "person.text.rectangle.fill",
-                iconColor: Color(hex: "5B4FCF"),
+                iconColor: AppColors.accent,
                 title: "Personal"
             ) { PersonalSettingsView() }
 
@@ -163,7 +163,7 @@ struct ProfileView: View {
 
             menuRow(
                 icon: "target",
-                iconColor: Color(hex: "1B7D38"),
+                iconColor: AppColors.greenText,
                 title: "Goals"
             ) { GoalsView() }
 
@@ -171,7 +171,7 @@ struct ProfileView: View {
 
             menuRow(
                 icon: "bell.fill",
-                iconColor: Color(hex: "B45309"),
+                iconColor: AppColors.amberText,
                 title: "Notifications"
             ) { NotificationsView() }
         }

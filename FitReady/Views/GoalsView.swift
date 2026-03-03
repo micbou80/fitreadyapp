@@ -24,10 +24,10 @@ struct GoalsView: View {
     // MARK: - Data
 
     private let goals: [(key: String, label: String, icon: String, color: Color)] = [
-        ("lose",     "Lose weight",  "arrow.down.circle.fill", Color(hex: "1B7D38")),
-        ("maintain", "Maintain",     "equal.circle.fill",       .purple),
-        ("gain",     "Gain weight",  "arrow.up.circle.fill",    Color(hex: "B45309")),
-        ("muscle",   "Build muscle", "dumbbell.fill",            Color(hex: "C0392B")),
+        ("lose",     "Lose weight",  "arrow.down.circle.fill", AppColors.greenText),
+        ("maintain", "Maintain",     "equal.circle.fill",       AppColors.accent),
+        ("gain",     "Gain weight",  "arrow.up.circle.fill",    AppColors.amberText),
+        ("muscle",   "Build muscle", "dumbbell.fill",            AppColors.redText),
     ]
 
     private let paces: [(key: String, label: String, desc: String, value: Double)] = [
@@ -90,14 +90,14 @@ struct GoalsView: View {
                     if missingStats {
                         HStack(spacing: DS.Spacing.sm) {
                             Image(systemName: "exclamationmark.triangle.fill")
-                                .foregroundStyle(Color(hex: "B45309"))
+                                .foregroundStyle(AppColors.amberText)
                             Text("Add your weight, height, and age in Personal first.")
                                 .font(DS.Typography.caption())
                                 .foregroundStyle(Color(.secondaryLabel))
                         }
                         .padding(DS.Spacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
-                        .background(Color(hex: "FFF4E5"))
+                        .background(AppColors.amberSoft)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.chip))
                     }
 
@@ -113,7 +113,7 @@ struct GoalsView: View {
                         .foregroundStyle(.white)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
-                        .background(calculated ? Color(hex: "1B7D38") : .purple)
+                        .background(calculated ? AppColors.greenText : AppColors.accent)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
                     }
                     .animation(.easeInOut(duration: 0.3), value: calculated)
@@ -158,7 +158,7 @@ struct GoalsView: View {
                 Spacer()
                 if primaryGoal == goal.key {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(AppColors.accent)
                 }
             }
             .padding(.vertical, DS.Spacing.md)
@@ -185,7 +185,7 @@ struct GoalsView: View {
                 Spacer()
                 if selectedPaceKey == pace.key {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(.purple)
+                        .foregroundStyle(AppColors.accent)
                         .padding(.top, 1)
                 }
             }
@@ -202,13 +202,13 @@ struct GoalsView: View {
                 .frame(maxWidth: .infinity, alignment: .leading)
 
             HStack(spacing: 0) {
-                macroCell(value: "\(r.kcal)",      label: "kcal",    color: Color(hex: "B45309"))
+                macroCell(value: "\(r.kcal)",      label: "kcal",    color: AppColors.dataCalories)
                 Divider().frame(height: 40)
-                macroCell(value: "\(r.proteinG)g", label: "protein", color: .purple)
+                macroCell(value: "\(r.proteinG)g", label: "protein", color: AppColors.dataProtein)
                 Divider().frame(height: 40)
-                macroCell(value: "\(r.fatG)g",     label: "fat",     color: Color(hex: "1B7D38"))
+                macroCell(value: "\(r.fatG)g",     label: "fat",     color: AppColors.dataFat)
                 Divider().frame(height: 40)
-                macroCell(value: "\(r.carbsG)g",   label: "carbs",   color: Color(hex: "5B4FCF"))
+                macroCell(value: "\(r.carbsG)g",   label: "carbs",   color: AppColors.dataCarbs)
             }
 
             Text("These targets update across the whole app.")

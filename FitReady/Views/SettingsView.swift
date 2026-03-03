@@ -35,7 +35,7 @@ struct SettingsView: View {
                                 .monospacedDigit()
                         }
                         Slider(value: $sleepTargetHours, in: 6.0...10.0, step: 0.5)
-                            .tint(Color(red: 0.40, green: 0.52, blue: 0.98))
+                            .tint(AppColors.dataSleep)
                     }
                 } header: {
                     Text("Sleep Target")
@@ -51,14 +51,14 @@ struct SettingsView: View {
                             description: "HRV ≥ \(Int(hrvGoodThreshold * 100))% of baseline",
                             value: $hrvGoodThreshold,
                             range: 0.80...1.00,
-                            color: Color(red: 0.20, green: 0.78, blue: 0.35)
+                            color: AppColors.greenBase
                         )
                         thresholdRow(
                             label: "Neutral",
                             description: "HRV ≥ \(Int(hrvNeutralThreshold * 100))% of baseline",
                             value: $hrvNeutralThreshold,
                             range: 0.60...0.90,
-                            color: Color(red: 1.00, green: 0.55, blue: 0.26)
+                            color: AppColors.amberBase
                         )
                     }
                 } header: {
@@ -75,14 +75,14 @@ struct SettingsView: View {
                             description: "RHR ≤ +\(Int((rhrGoodThreshold - 1.0) * 100))% of baseline",
                             value: $rhrGoodThreshold,
                             range: 1.00...1.10,
-                            color: Color(red: 0.20, green: 0.78, blue: 0.35)
+                            color: AppColors.greenBase
                         )
                         thresholdRow(
                             label: "Neutral",
                             description: "RHR ≤ +\(Int((rhrNeutralThreshold - 1.0) * 100))% of baseline",
                             value: $rhrNeutralThreshold,
                             range: 1.01...1.20,
-                            color: Color(red: 1.00, green: 0.55, blue: 0.26)
+                            color: AppColors.amberBase
                         )
                     }
                 } header: {
@@ -120,7 +120,7 @@ struct SettingsView: View {
                             Image(systemName: "arrow.up.right")
                                 .font(.caption)
                         }
-                        .foregroundStyle(Color.accentColor)
+                        .foregroundStyle(AppColors.accent)
                     }
                 } header: {
                     Text("AI Scanner")

@@ -35,7 +35,7 @@ struct PrimaryActionSection: View {
                     .foregroundStyle(Color(.secondaryLabel))
                     .padding(.horizontal, DS.Spacing.sm)
                     .padding(.vertical, 3)
-                    .background(Color(.systemGray6))
+                    .background(AppColors.background)
                     .clipShape(Capsule())
             }
 
@@ -72,7 +72,7 @@ struct PrimaryActionSection: View {
             HStack(spacing: DS.Spacing.md) {
                 Image(systemName: "checkmark.circle.fill")
                     .font(.system(size: 28))
-                    .foregroundStyle(Color(hex: "1B7D38"))
+                    .foregroundStyle(AppColors.greenText)
                 Text(vm.recommendedAction.completedMessage)
                     .font(DS.Typography.title())
             }

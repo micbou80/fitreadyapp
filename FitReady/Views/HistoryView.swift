@@ -63,7 +63,7 @@ struct InsightsView: View {
     var body: some View {
         NavigationStack {
             ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+                AppColors.background.ignoresSafeArea()
 
                 if allMetrics.isEmpty && readinessScore == nil {
                     ContentUnavailableView(
@@ -136,7 +136,7 @@ struct InsightsView: View {
                                 MetricChart(
                                     title: "HRV",
                                     unit: "ms",
-                                    color: Color(red: 0.20, green: 0.78, blue: 0.35),
+                                    color: AppColors.greenBase,
                                     data: allMetrics.compactMap { m in
                                         m.hrv.map { ChartPoint(date: m.date, value: $0) }
                                     }
@@ -144,7 +144,7 @@ struct InsightsView: View {
                                 MetricChart(
                                     title: "Resting HR",
                                     unit: "bpm",
-                                    color: Color(red: 1.00, green: 0.55, blue: 0.26),
+                                    color: AppColors.amberBase,
                                     data: allMetrics.compactMap { m in
                                         m.rhr.map { ChartPoint(date: m.date, value: $0) }
                                     },
@@ -153,7 +153,7 @@ struct InsightsView: View {
                                 MetricChart(
                                     title: "Sleep",
                                     unit: "hrs",
-                                    color: Color(red: 0.40, green: 0.52, blue: 0.98),
+                                    color: AppColors.dataSleep,
                                     data: allMetrics.compactMap { m in
                                         m.sleepHours.map { ChartPoint(date: m.date, value: $0) }
                                     }
@@ -222,9 +222,9 @@ private struct MetricChart: View {
         let pct = (point.value - average) / average
         let isGood = higherIsBetter ? pct > 0.04 : pct < -0.04
         let isBad  = higherIsBetter ? pct < -0.12 : pct > 0.07
-        if isGood { return Color(red: 0.20, green: 0.78, blue: 0.35) }
-        if isBad  { return Color(red: 0.88, green: 0.36, blue: 0.36) }
-        return Color(red: 1.00, green: 0.55, blue: 0.26)
+        if isGood { return AppColors.greenBase }
+        if isBad  { return AppColors.redBase }
+        return AppColors.amberBase
     }
 
     var body: some View {
@@ -291,9 +291,9 @@ private struct MetricChart: View {
             }
         }
         .padding()
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.05), radius: 8, x: 0, y: 2)
+        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
         .padding(.horizontal, 16)
     }
 }

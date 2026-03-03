@@ -15,7 +15,7 @@ struct ReinforcementSection: View {
 
                 // Momentum row
                 HStack(spacing: DS.Spacing.md) {
-                    MiniRing(progress: progress, color: .purple)
+                    MiniRing(progress: progress, color: AppColors.accent)
                         .frame(width: 34, height: 34)
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -33,7 +33,7 @@ struct ReinforcementSection: View {
                     HStack(spacing: DS.Spacing.sm) {
                         Image(systemName: "star.fill")
                             .font(.system(size: 12))
-                            .foregroundStyle(Color(hex: "F59E0B"))
+                            .foregroundStyle(AppColors.amberBase)
                         Text(win)
                             .font(DS.Typography.caption())
                             .foregroundStyle(Color(.secondaryLabel))

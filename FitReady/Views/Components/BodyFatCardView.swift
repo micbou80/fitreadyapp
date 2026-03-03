@@ -8,9 +8,7 @@ struct BodyFatCardView: View {
 
     private var isDecreasing: Bool { current > goal }
     private var accentColor: Color {
-        isDecreasing
-            ? Color(red: 1.0, green: 0.55, blue: 0.26)
-            : Color(red: 0.20, green: 0.78, blue: 0.35)
+        isDecreasing ? AppColors.amberBase : AppColors.greenBase
     }
     private var hasStart: Bool { (start ?? 0) > 0 }
 
@@ -74,10 +72,10 @@ struct BodyFatCardView: View {
             HStack(spacing: 5) {
                 if current == goal {
                     Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .foregroundStyle(AppColors.greenBase)
                     Text("Goal reached!")
                         .fontWeight(.semibold)
-                        .foregroundStyle(Color(red: 0.20, green: 0.78, blue: 0.35))
+                        .foregroundStyle(AppColors.greenBase)
                 } else {
                     Image(systemName: "arrow.right")
                         .font(.caption.weight(.bold))
@@ -90,9 +88,9 @@ struct BodyFatCardView: View {
             .font(.subheadline)
         }
         .padding(16)
-        .background(Color(.systemBackground))
+        .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: .black.opacity(0.07), radius: 10, x: 0, y: 3)
+        .shadow(color: AppColors.shadowColor, radius: 10, x: 0, y: 3)
     }
 
     // MARK: - Sub-views

@@ -11,9 +11,9 @@ struct PrimaryCTAButton: View {
 
     private var buttonColor: Color {
         switch state {
-        case .green:  return Color(hex: "1B7D38")
-        case .yellow: return Color(hex: "B45309")
-        case .red:    return Color(hex: "7C3AED") // purple = calm / recovery
+        case .green:  return AppColors.greenText
+        case .yellow: return AppColors.amberText
+        case .red:    return AppColors.accent   // purple = calm / recovery
         }
     }
 
