@@ -1,55 +1,50 @@
 import SwiftUI
 
-/// A row of StatusChips (steps, active kcal, protein remaining) that expands
-/// inline to show full macro progress bars.
+/// Three always-visible daily stat cells (Steps / Calories / Protein)
+/// plus a contextual protein tip that adapts to how close the user is to their goal.
 struct CollapsedStatusSection: View {
 
     @ObservedObject var vm: TodayViewModel
-    @State private var expanded = false
 
     var body: some View {
-        VStack(spacing: DS.Spacing.sm) {
+        VStack(spacing: DS.Spacing.md) {
 
-            // Chip row + expand toggle
-            HStack(spacing: DS.Spacing.sm) {
-                StatusChip(
-                    icon:  "figure.walk",
-                    value: formattedSteps,
-                    color: Color(hex: "1B7D38")
+            // — Stat cells —
+            HStack(spacing: 0) {
+                statCell(
+                    icon:      "figure.walk",
+                    iconColor: Color(hex: "1B7D38"),
+                    value:     formattedSteps,
+                    label:     "steps"
                 )
-                StatusChip(
-                    icon:  "flame.fill",
-                    value: "\(vm.collapsedStats.activeKcal) kcal",
-                    color: Color(hex: "EA580C")
+                separator
+                statCell(
+                    icon:      "fork.knife",
+                    iconColor: Color(hex: "B45309"),
+                    value:     formattedKcal,
+                    label:     "/ \(vm.collapsedStats.nutrition.kcalTarget) kcal"
                 )
-                StatusChip(
-                    icon:  "fork.knife",
-                    value: "\(vm.collapsedStats.proteinRemaining)g left",
-                    color: .purple
+                separator
+                statCell(
+                    icon:      "dumbbell.fill",
+                    iconColor: .purple,
+                    value:     formattedProtein,
+                    label:     "protein"
                 )
-
-                Spacer()
-
-                Button {
-                    withAnimation(.spring(response: 0.35, dampingFraction: 0.8)) {
-                        expanded.toggle()
-                    }
-                    Haptics.impact(.light)
-                } label: {
-                    Image(systemName: expanded ? "chevron.up" : "chevron.down")
-                        .font(.system(size: 11, weight: .semibold))
-                        .foregroundStyle(Color(.secondaryLabel))
-                        .frame(width: 28, height: 28)
-                        .background(Color(.systemGray6))
-                        .clipShape(Circle())
-                }
-                .buttonStyle(.plain)
             }
 
-            // Expanded macro bars
-            if expanded {
-                macroBarsView
-                    .transition(.opacity.combined(with: .move(edge: .top)))
+            // — Protein tip (only once food has been logged) —
+            if let tip = proteinTip {
+                Divider()
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: tipIcon)
+                        .font(.system(size: 11))
+                        .foregroundStyle(tipIconColor)
+                    Text(tip)
+                        .font(DS.Typography.caption())
+                        .foregroundStyle(Color(.secondaryLabel))
+                    Spacer()
+                }
             }
         }
         .padding(DS.Spacing.md)
@@ -58,50 +53,71 @@ struct CollapsedStatusSection: View {
         .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
-    // MARK: - Macro bars
-
-    private var macroBarsView: some View {
-        let n = vm.collapsedStats.nutrition
-        return VStack(alignment: .leading, spacing: DS.Spacing.sm) {
-            Divider()
-            macroBar(label: "Calories", current: n.kcalConsumed,    target: n.kcalTarget,    color: Color(hex: "7C3AED"))
-            macroBar(label: "Protein",  current: n.proteinConsumed,  target: n.proteinTarget, color: Color(hex: "1B7D38"))
-            macroBar(label: "Fat",      current: n.fatConsumed,      target: n.fatTarget,     color: Color(hex: "EA580C"))
-            macroBar(label: "Carbs",    current: n.carbsConsumed,    target: n.carbsTarget,   color: Color(hex: "2563EB"))
-        }
-    }
+    // MARK: - Stat cell
 
     @ViewBuilder
-    private func macroBar(label: String, current: Int, target: Int, color: Color) -> some View {
-        let progress = min(1.0, Double(current) / Double(max(1, target)))
-        VStack(alignment: .leading, spacing: 3) {
-            HStack {
-                Text(label)
-                    .font(DS.Typography.caption())
-                Spacer()
-                Text("\(current) / \(target)")
-                    .font(DS.Typography.caption())
-                    .foregroundStyle(Color(.secondaryLabel))
-            }
-            GeometryReader { geo in
-                ZStack(alignment: .leading) {
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(Color(.systemGray5))
-                        .frame(height: 5)
-                    RoundedRectangle(cornerRadius: 3)
-                        .fill(color)
-                        .frame(width: geo.size.width * progress, height: 5)
-                        .animation(.spring(response: 0.6), value: progress)
-                }
-            }
-            .frame(height: 5)
+    private func statCell(icon: String, iconColor: Color, value: String, label: String) -> some View {
+        VStack(spacing: 4) {
+            Image(systemName: icon)
+                .font(.system(size: 13, weight: .semibold))
+                .foregroundStyle(iconColor)
+            Text(value)
+                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .minimumScaleFactor(0.75)
+                .lineLimit(1)
+            Text(label)
+                .font(.system(size: 11, weight: .regular))
+                .foregroundStyle(Color(.secondaryLabel))
+                .lineLimit(1)
         }
+        .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Helpers
+    private var separator: some View {
+        Divider()
+            .frame(height: 40)
+    }
+
+    // MARK: - Formatting
 
     private var formattedSteps: String {
         let s = vm.collapsedStats.steps
         return s >= 1_000 ? String(format: "%.1fk", Double(s) / 1_000) : "\(s)"
+    }
+
+    private var formattedKcal: String {
+        let consumed = vm.collapsedStats.nutrition.kcalConsumed
+        guard consumed > 0 else { return "—" }
+        return consumed >= 1_000 ? String(format: "%.1fk", Double(consumed) / 1_000) : "\(consumed)"
+    }
+
+    private var formattedProtein: String {
+        let n = vm.collapsedStats.nutrition
+        guard n.proteinConsumed > 0 || n.proteinTarget > 0 else { return "—" }
+        return "\(n.proteinConsumed) / \(n.proteinTarget)g"
+    }
+
+    // MARK: - Contextual protein tip
+
+    private var proteinTip: String? {
+        let n = vm.collapsedStats.nutrition
+        guard n.proteinTarget > 0, n.proteinConsumed > 0 else { return nil }
+        let rem = n.proteinRemaining
+        switch rem {
+        case ..<1:    return "Protein goal hit for today"
+        case 1..<20:  return "Almost there — time to close the kitchen"
+        case 20..<60: return "Find a high-protein snack to close the gap"
+        default:      return "One more high-protein meal to go"
+        }
+    }
+
+    private var tipIcon: String {
+        (vm.collapsedStats.nutrition.proteinRemaining < 1) ? "checkmark.circle.fill" : "lightbulb.fill"
+    }
+
+    private var tipIconColor: Color {
+        (vm.collapsedStats.nutrition.proteinRemaining < 1)
+            ? Color(hex: "1B7D38")
+            : Color(hex: "B45309")
     }
 }
