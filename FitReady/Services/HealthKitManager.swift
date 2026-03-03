@@ -77,21 +77,16 @@ final class HealthKitManager: ObservableObject {
         currentWeightKg   = await fetchLatestBodyMass()
         currentBodyFatPct = await fetchLatestBodyFatPercentage()
 
-        // Nutrition — sum all samples logged today
-        let kcalType    = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed)
-        let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein)
-        let fatType     = HKQuantityType.quantityType(forIdentifier: .dietaryFatTotal)
-        let carbsType   = HKQuantityType.quantityType(forIdentifier: .dietaryCarbohydrates)
+        // Nutrition — sum all samples logged today (iOS 17+ non-failable HKQuantityType init)
+        async let kcal    = fetchDietarySum(type: HKQuantityType(.dietaryEnergyConsumed), unit: .kilocalorie(), from: todayStart, to: now)
+        async let protein = fetchDietarySum(type: HKQuantityType(.dietaryProtein),        unit: .gram(),        from: todayStart, to: now)
+        async let fat     = fetchDietarySum(type: HKQuantityType(.dietaryFatTotal),       unit: .gram(),        from: todayStart, to: now)
+        async let carbs   = fetchDietarySum(type: HKQuantityType(.dietaryCarbohydrates),  unit: .gram(),        from: todayStart, to: now)
 
-        async let kcal    = kcalType.map    { fetchDietarySum(type: $0, unit: .kilocalorie(),           from: todayStart, to: now) }
-        async let protein = proteinType.map { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
-        async let fat     = fatType.map     { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
-        async let carbs   = carbsType.map   { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
-
-        todayKcal     = await kcal    ?? nil
-        todayProteinG = await protein ?? nil
-        todayFatG     = await fat     ?? nil
-        todayCarbsG   = await carbs   ?? nil
+        todayKcal     = await kcal
+        todayProteinG = await protein
+        todayFatG     = await fat
+        todayCarbsG   = await carbs
 
         // Baseline: fetch each of the past N days
         var metrics: [DailyMetrics] = []
