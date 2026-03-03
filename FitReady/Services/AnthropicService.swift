@@ -1,6 +1,11 @@
 import UIKit
 
-// MARK: - Result type
+// MARK: - Result types
+
+struct PlanCoaching: Codable {
+    let headline: String
+    let tips: [String]
+}
 
 struct FoodScanResult {
     let mealName: String
@@ -39,11 +44,67 @@ enum AnthropicServiceError: LocalizedError {
 
 enum AnthropicService {
 
-    private static let model    = "claude-sonnet-4-6"
+    private static let foodModel    = "claude-sonnet-4-6"
+    private static let coachingModel = "claude-haiku-4-5-20251001"
     private static let endpoint = URL(string: "https://api.anthropic.com/v1/messages")!
     private static let maxSide: CGFloat = 1024
 
     // MARK: Public
+
+    /// Generates a short motivating headline + 3 practical tips for the user's plan.
+    /// Uses claude-haiku (cheapest) with a compact prompt to minimise token cost.
+    static func generatePlanCoaching(
+        goal: String,
+        currentWeightKg: Double,
+        goalWeightKg: Double?,
+        weeksToGoal: Double?,
+        dailyKcal: Int,
+        apiKey: String
+    ) async throws -> PlanCoaching {
+        guard !apiKey.trimmingCharacters(in: .whitespaces).isEmpty else {
+            throw AnthropicServiceError.noAPIKey
+        }
+
+        var userMsg = "Goal: \(goal). Current: \(Int(currentWeightKg)) kg."
+        if let gw = goalWeightKg, gw > 0 { userMsg += " Target: \(Int(gw)) kg." }
+        if let wk = weeksToGoal, wk > 0  { userMsg += " ~\(Int(wk)) weeks." }
+        userMsg += " \(dailyKcal) kcal/day. Short motivating headline + 3 practical tips."
+
+        let body: [String: Any] = [
+            "model":      coachingModel,
+            "max_tokens": 200,
+            "system":     "Fitness coach. Reply ONLY with JSON: {\"headline\":\"string\",\"tips\":[\"string\",\"string\",\"string\"]}",
+            "messages":   [["role": "user", "content": userMsg]]
+        ]
+
+        var req = URLRequest(url: endpoint)
+        req.httpMethod = "POST"
+        req.setValue(apiKey,             forHTTPHeaderField: "x-api-key")
+        req.setValue("2023-06-01",       forHTTPHeaderField: "anthropic-version")
+        req.setValue("application/json", forHTTPHeaderField: "content-type")
+        req.httpBody = try JSONSerialization.data(withJSONObject: body)
+
+        let (data, response): (Data, URLResponse)
+        do { (data, response) = try await URLSession.shared.data(for: req) }
+        catch { throw AnthropicServiceError.networkError(error) }
+
+        if let http = response as? HTTPURLResponse, http.statusCode != 200 {
+            throw AnthropicServiceError.invalidResponse(http.statusCode)
+        }
+
+        guard let json    = try? JSONSerialization.jsonObject(with: data) as? [String: Any],
+              let content = json["content"] as? [[String: Any]],
+              let text    = content.first?["text"] as? String,
+              let textData = text
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .replacingOccurrences(of: "```json", with: "")
+                .replacingOccurrences(of: "```",     with: "")
+                .trimmingCharacters(in: .whitespacesAndNewlines)
+                .data(using: .utf8)
+        else { throw AnthropicServiceError.parseError("Unexpected coaching response") }
+
+        return try JSONDecoder().decode(PlanCoaching.self, from: textData)
+    }
 
     static func scanFood(
         image: UIImage,
@@ -62,7 +123,7 @@ enum AnthropicService {
 
         // 2. Build request
         let body: [String: Any] = [
-            "model":      model,
+            "model":      foodModel,
             "max_tokens": 256,
             "messages": [[
                 "role": "user",

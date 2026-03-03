@@ -203,7 +203,7 @@ struct PersonalSettingsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
             }
-            .onTapGesture { focusedField = nil }
+            .simultaneousGesture(TapGesture().onEnded { focusedField = nil })
         }
         .navigationTitle("Personal")
         .navigationBarTitleDisplayMode(.inline)

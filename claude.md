@@ -141,7 +141,7 @@ FitReady/
     HistoryView.swift               ← Insights tab: 7-day line charts for HRV / RHR / Sleep
     ProfileView.swift               ← Profile hub, navigates to sub-views
     PersonalSettingsView.swift      ← name, photo, height, age, sex, training days/location, units
-    GoalsView.swift                 ← primary goal, weekly pace, macro calculation + result card
+    GoalsView.swift                 ← primary goal, pace, goal targets (weight/fat%/date), Personalize My Plan → PlanSplashView
     NotificationsView.swift         ← notification level preference selector
     SettingsView.swift              ← thresholds, baseline window, sleep target, AI scanner API key
     MainReadinessView.swift         ← V1 Today screen (preserved, NOT in tab bar)
@@ -211,7 +211,9 @@ All settings live in UserDefaults via `@AppStorage`. No CoreData.
 | `hrvNeutralThreshold` | Double | 0.80 | HRV neutral threshold |
 | `rhrGoodThreshold` | Double | 1.03 | RHR good threshold |
 | `rhrNeutralThreshold` | Double | 1.08 | RHR neutral threshold |
-| `goalWeightKg` | Double | 0 | Weight goal |
+| `goalWeightKg` | Double | 0 | Goal weight (same key used by weight card + GoalsView) |
+| `goalBodyFatPct` | Double | 0 | Target body fat % |
+| `goalTargetDateTS` | Double | 0 | Target date as TimeInterval (0 = not set) |
 | `manualWeightKg` | Double | 0 | Manual weight override |
 | `useManualWeight` | Bool | false | Prefer manual weight over HealthKit |
 | `useImperial` | Bool | false | Show lbs/ft instead of kg/cm |
