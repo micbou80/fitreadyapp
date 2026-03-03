@@ -21,7 +21,7 @@
 	<key>NSPhotoLibraryUsageDescription</key>
 	<string>FitReady accesses your photos to scan meals and estimate macros with AI.</string>
 	<key>NSHealthShareUsageDescription</key>
-	<string>FitReady reads your HRV, resting heart rate, and sleep data to calculate your daily workout readiness score.</string>
+	<string>FitReady reads your HRV, resting heart rate, sleep, steps, active calories, and body composition data to calculate your daily workout readiness score.</string>
 	<key>UIApplicationSceneManifest</key>
 	<dict>
 		<key>UIApplicationSupportsMultipleScenes</key>

@@ -6,8 +6,8 @@ struct ContentView: View {
             MainReadinessView()
                 .tabItem { Label("Today",    systemImage: "house.fill") }
 
-            HistoryView()
-                .tabItem { Label("Trends",   systemImage: "chart.line.uptrend.xyaxis") }
+            InsightsView()
+                .tabItem { Label("Insights", systemImage: "chart.bar.fill") }
 
             ProfileView()
                 .tabItem { Label("Profile",  systemImage: "person.fill") }

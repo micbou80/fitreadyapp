@@ -15,6 +15,9 @@ final class HealthKitManager: ObservableObject {
     @Published var todayProteinG: Double?
     @Published var todayFatG: Double?
     @Published var todayCarbsG: Double?
+    // Activity — summed for today
+    @Published var todaySteps: Double?
+    @Published var todayActiveKcal: Double?
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
@@ -31,6 +34,8 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.quantityType(forIdentifier: .dietaryProtein)            { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .dietaryFatTotal)           { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .dietaryCarbohydrates)      { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .stepCount)                 { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)        { types.insert(t) }
         return types
     }()
 
@@ -80,15 +85,21 @@ final class HealthKitManager: ObservableObject {
         currentBodyFatPct = await fetchLatestBodyFatPercentage()
 
         // Nutrition — sum all samples logged today (iOS 17+ non-failable HKQuantityType init)
-        async let kcal    = fetchDietarySum(type: HKQuantityType(.dietaryEnergyConsumed), unit: .kilocalorie(), from: todayStart, to: now)
-        async let protein = fetchDietarySum(type: HKQuantityType(.dietaryProtein),        unit: .gram(),        from: todayStart, to: now)
-        async let fat     = fetchDietarySum(type: HKQuantityType(.dietaryFatTotal),       unit: .gram(),        from: todayStart, to: now)
-        async let carbs   = fetchDietarySum(type: HKQuantityType(.dietaryCarbohydrates),  unit: .gram(),        from: todayStart, to: now)
+        async let kcal    = fetchQuantitySum(type: HKQuantityType(.dietaryEnergyConsumed), unit: .kilocalorie(), from: todayStart, to: now)
+        async let protein = fetchQuantitySum(type: HKQuantityType(.dietaryProtein),        unit: .gram(),        from: todayStart, to: now)
+        async let fat     = fetchQuantitySum(type: HKQuantityType(.dietaryFatTotal),       unit: .gram(),        from: todayStart, to: now)
+        async let carbs   = fetchQuantitySum(type: HKQuantityType(.dietaryCarbohydrates),  unit: .gram(),        from: todayStart, to: now)
 
         todayKcal     = await kcal
         todayProteinG = await protein
         todayFatG     = await fat
         todayCarbsG   = await carbs
+
+        // Activity — step count and active energy for today
+        async let steps      = fetchQuantitySum(type: HKQuantityType(.stepCount),          unit: .count(),       from: todayStart, to: now)
+        async let activeKcal = fetchQuantitySum(type: HKQuantityType(.activeEnergyBurned), unit: .kilocalorie(), from: todayStart, to: now)
+        todaySteps      = await steps
+        todayActiveKcal = await activeKcal
 
         // Baseline: fetch each of the past N days
         var metrics: [DailyMetrics] = []
@@ -116,8 +127,8 @@ final class HealthKitManager: ObservableObject {
 
     // MARK: - Private fetch helpers
 
-    /// Sums all nutrition samples of a given type within a date range.
-    private func fetchDietarySum(
+    /// Sums all quantity samples of a given type within a date range.
+    private func fetchQuantitySum(
         type: HKQuantityType,
         unit: HKUnit,
         from start: Date,

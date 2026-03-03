@@ -29,11 +29,6 @@ struct MainReadinessView: View {
     @AppStorage("goalWeightKg")          private var goalWeight: Double = 0
     @AppStorage("manualWeightKg")        private var manualWeight: Double = 0
     @AppStorage("useManualWeight")       private var useManualWeight: Bool = false
-    @AppStorage("goalBodyFatPct")        private var goalBodyFat: Double = 0
-    @AppStorage("manualBodyFatPct")      private var manualBodyFat: Double = 0
-    @AppStorage("useManualBodyFat")      private var useManualBodyFat: Bool = false
-    @AppStorage("startWeightKg")         private var startWeight: Double = 0
-    @AppStorage("startBodyFatPct")       private var startBodyFat: Double = 0
     @AppStorage("weeklyScheduleJSON")    private var weeklyScheduleJSON: String = "{}"
     // Macro settings
     @AppStorage("heightCm")             private var heightCm: Double = 0
@@ -43,6 +38,8 @@ struct MainReadinessView: View {
     @AppStorage("weightLossPace")       private var weightLossPace: Double = 0.5
     @AppStorage("proteinPerKg")         private var proteinPerKg: Double = 1.8
     @AppStorage("fatFloorPct")          private var fatFloorPct: Double = 25
+    // Meal log for macro actuals
+    @AppStorage("mealsJSON")            private var mealsJSON: String = "[]"
 
     // MARK: - Computed
 
@@ -60,11 +57,6 @@ struct MainReadinessView: View {
     private var displayWeight: Double? {
         if useManualWeight { return manualWeight > 0 ? manualWeight : nil }
         return healthKit.currentWeightKg
-    }
-
-    private var displayBodyFat: Double? {
-        if useManualBodyFat { return manualBodyFat > 0 ? manualBodyFat : nil }
-        return healthKit.currentBodyFatPct
     }
 
     private var macroTargets: MacroTargets? {
@@ -92,18 +84,44 @@ struct MainReadinessView: View {
         (try? JSONDecoder().decode([String: String].self, from: Data(weeklyScheduleJSON.utf8))) ?? [:]
     }
 
-    /// The 7 days of the current week, Mon–Sun.
     private var currentWeekDays: [Date] {
         let cal = Calendar.current
         let today = cal.startOfDay(for: Date())
-        let weekday = cal.component(.weekday, from: today) // 1=Sun … 7=Sat
-        let daysFromMonday = (weekday + 5) % 7             // 0=Mon … 6=Sun
+        let weekday = cal.component(.weekday, from: today)
+        let daysFromMonday = (weekday + 5) % 7
         let monday = cal.date(byAdding: .day, value: -daysFromMonday, to: today)!
         return (0..<7).compactMap { cal.date(byAdding: .day, value: $0, to: monday) }
     }
 
     private var dateLabel: String {
         Date().formatted(.dateTime.weekday(.wide).month().day())
+    }
+
+    private var todayKey: String {
+        let c = Calendar.current.dateComponents([.year, .month, .day], from: Date())
+        return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
+    }
+
+    /// Macro actuals: HealthKit takes priority, then scanned meals
+    private var actualKcal: Double? {
+        healthKit.todayKcal ?? mealTotal(\.kcal)
+    }
+    private var actualProteinG: Double? {
+        healthKit.todayProteinG ?? mealTotal(\.proteinG)
+    }
+    private var actualFatG: Double? {
+        healthKit.todayFatG ?? mealTotal(\.fatG)
+    }
+    private var actualCarbsG: Double? {
+        healthKit.todayCarbsG ?? mealTotal(\.carbsG)
+    }
+
+    private func mealTotal(_ keyPath: KeyPath<MealEntry, Double>) -> Double? {
+        let meals = ((try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8))) ?? [])
+            .filter { $0.date == todayKey }
+        guard !meals.isEmpty else { return nil }
+        let total = meals.reduce(0.0) { $0 + $1[keyPath: keyPath] }
+        return total > 0 ? total : nil
     }
 
     // MARK: - Body
@@ -145,8 +163,9 @@ struct MainReadinessView: View {
     @ViewBuilder
     private func mainContent(score: ReadinessScore) -> some View {
         ScrollView {
-            VStack(spacing: 28) {
-                // Verdict label
+            VStack(spacing: 24) {
+
+                // Verdict + ring
                 VStack(spacing: 6) {
                     Text(score.verdict.label)
                         .font(.system(size: 38, weight: .black, design: .rounded))
@@ -176,69 +195,22 @@ struct MainReadinessView: View {
                 }
                 .padding(.top, 8)
 
-                // Ring
                 ReadinessRingView(score: score)
 
                 // Weekly schedule
                 weeklySchedulePicker
 
-                // Metric cards
-                HStack(spacing: 10) {
-                    MetricCardView(
-                        title: "HRV",
-                        value: score.todayHRV.map { String(format: "%.0f", $0) } ?? "—",
-                        unit: "ms",
-                        delta: percentDelta(today: score.todayHRV, baseline: score.baselineHRV, invert: false),
-                        icon: "waveform.path.ecg",
-                        score: score.hrvScore
-                    )
-                    MetricCardView(
-                        title: "Resting HR",
-                        value: score.todayRHR.map { String(format: "%.0f", $0) } ?? "—",
-                        unit: "bpm",
-                        delta: percentDelta(today: score.todayRHR, baseline: score.baselineRHR, invert: true),
-                        icon: "heart.fill",
-                        score: score.rhrScore
-                    )
-                    MetricCardView(
-                        title: "Sleep",
-                        value: score.todaySleep.map { String(format: "%.1f", $0) } ?? "—",
-                        unit: "hrs",
-                        delta: sleepDelta(today: score.todaySleep),
-                        icon: "moon.fill",
-                        score: score.sleepScore
-                    )
-                }
-                .padding(.horizontal, 16)
+                // Activity snapshot: Steps + Active Kcal
+                activityRow
 
-                // Weight card (shown when we have a current weight and a goal set)
-                if let currentKg = displayWeight, goalWeight > 0 {
-                    WeightCardView(
-                        current: currentKg,
-                        goal: goalWeight,
-                        start: startWeight > 0 ? startWeight : nil
-                    )
-                    .padding(.horizontal, 16)
-                }
-
-                // Body fat card
-                if let currentBF = displayBodyFat, goalBodyFat > 0 {
-                    BodyFatCardView(
-                        current: currentBF,
-                        goal: goalBodyFat,
-                        start: startBodyFat > 0 ? startBodyFat : nil
-                    )
-                    .padding(.horizontal, 16)
-                }
-
-                // Macro summary card (shown once height/age/sex are set and a weight is known)
+                // Macro summary card
                 if let targets = macroTargets {
                     MacroSummaryCard(
                         targets: targets,
-                        actualKcal: healthKit.todayKcal,
-                        actualProteinG: healthKit.todayProteinG,
-                        actualFatG: healthKit.todayFatG,
-                        actualCarbsG: healthKit.todayCarbsG
+                        actualKcal: actualKcal,
+                        actualProteinG: actualProteinG,
+                        actualFatG: actualFatG,
+                        actualCarbsG: actualCarbsG
                     )
                     .padding(.horizontal, 16)
                 }
@@ -246,6 +218,55 @@ struct MainReadinessView: View {
                 Spacer(minLength: 16)
             }
         }
+    }
+
+    // MARK: - Activity row
+
+    @ViewBuilder
+    private var activityRow: some View {
+        HStack(spacing: 10) {
+            activityCell(
+                icon: "figure.walk",
+                value: healthKit.todaySteps.map { String(format: "%.0f", $0) } ?? "—",
+                label: "Steps",
+                color: Color(red: 0.20, green: 0.78, blue: 0.35)
+            )
+            activityCell(
+                icon: "flame.fill",
+                value: healthKit.todayActiveKcal.map { String(format: "%.0f", $0) } ?? "—",
+                label: "Active kcal",
+                color: Color(red: 1.00, green: 0.55, blue: 0.26)
+            )
+        }
+        .padding(.horizontal, 16)
+    }
+
+    @ViewBuilder
+    private func activityCell(icon: String, value: String, label: String, color: Color) -> some View {
+        HStack(spacing: 12) {
+            ZStack {
+                RoundedRectangle(cornerRadius: 10)
+                    .fill(color.opacity(0.12))
+                    .frame(width: 40, height: 40)
+                Image(systemName: icon)
+                    .font(.system(size: 18, weight: .semibold))
+                    .foregroundStyle(color)
+            }
+            VStack(alignment: .leading, spacing: 2) {
+                Text(value)
+                    .font(.system(size: 20, weight: .bold, design: .rounded))
+                    .foregroundStyle(Color(.label))
+                Text(label)
+                    .font(.caption)
+                    .foregroundStyle(Color(.secondaryLabel))
+            }
+            Spacer()
+        }
+        .padding(14)
+        .background(Color(.systemBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 14))
+        .shadow(color: .black.opacity(0.06), radius: 6, x: 0, y: 2)
+        .frame(maxWidth: .infinity)
     }
 
     // MARK: - Weekly schedule picker
@@ -258,7 +279,6 @@ struct MainReadinessView: View {
                     .font(.subheadline).fontWeight(.semibold)
                     .foregroundStyle(Color(.secondaryLabel))
                 Spacer()
-                // Legend
                 HStack(spacing: 10) {
                     ForEach(ScheduledActivity.allCases) { a in
                         HStack(spacing: 3) {
@@ -310,11 +330,7 @@ struct MainReadinessView: View {
             }
             .frame(maxWidth: .infinity)
             .padding(.vertical, 9)
-            .background(
-                isToday
-                    ? Color.accentColor
-                    : Color(.systemBackground)
-            )
+            .background(isToday ? Color.accentColor : Color(.systemBackground))
             .clipShape(RoundedRectangle(cornerRadius: 10))
             .overlay(
                 RoundedRectangle(cornerRadius: 10)
@@ -333,7 +349,6 @@ struct MainReadinessView: View {
         return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
     }
 
-    /// Cycles the activity for a given day: none → rest → run → workout → none.
     private func cycleActivity(for key: String, current: ScheduledActivity?) {
         var schedule = weeklySchedule
         switch current {
@@ -458,18 +473,5 @@ struct MainReadinessView: View {
     private func ucfirst(_ s: String) -> String {
         guard let first = s.first else { return s }
         return first.uppercased() + s.dropFirst()
-    }
-
-    // MARK: - Helpers
-
-    private func percentDelta(today: Double?, baseline: Double?, invert: Bool) -> Double? {
-        guard let t = today, let b = baseline, b > 0 else { return nil }
-        let raw = ((t - b) / b) * 100
-        return invert ? -raw : raw
-    }
-
-    private func sleepDelta(today: Double?) -> Double? {
-        guard let t = today else { return nil }
-        return ((t - sleepTargetHours) / sleepTargetHours) * 100
     }
 }
