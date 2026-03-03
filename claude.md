@@ -244,8 +244,8 @@ All settings live in UserDefaults via `@AppStorage`. No CoreData.
 ### Xcode Project (project.pbxproj)
 - Manually maintained — no Swift Package Manager, no CocoaPods
 - UUIDs are exactly **24 hex characters**, prefix `BF000000000000000000`
-- **Next available build file UUID:** `BF0000000000000000000084`
-- **Next available file reference UUID:** `BF0000000000000000000085`
+- **Next available build file UUID:** `BF0000000000000000000086`
+- **Next available file reference UUID:** `BF0000000000000000000087`
 - When adding a new Swift file, add entries in **four** places:
   1. `PBXBuildFile` section (build file UUID → file ref UUID)
   2. `PBXFileReference` section (file ref UUID → path)

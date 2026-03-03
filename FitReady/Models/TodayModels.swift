@@ -29,7 +29,7 @@ struct TodayAction {
 // MARK: - Secondary actions
 
 struct SecondaryAction: Identifiable {
-    enum Kind { case scanMeal, general }
+    enum Kind { case scanMeal, quickRecovery, general }
     let icon:  String
     let label: String
     let kind:  Kind
@@ -161,7 +161,7 @@ enum TodayMockData {
         case .green:
             return [scanMeal, SecondaryAction(icon: "figure.walk", label: "Steps top-up\n10 min", kind: .general)]
         case .yellow, .red:
-            return [scanMeal, SecondaryAction(icon: "figure.flexibility", label: "Quick mobility\n5 min", kind: .general)]
+            return [scanMeal, SecondaryAction(icon: "figure.flexibility", label: "Quick Recovery\n7 min", kind: .quickRecovery)]
         }
     }
 

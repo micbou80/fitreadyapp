@@ -1,14 +1,16 @@
 import SwiftUI
 
 /// Up to 2 secondary action cards.
-/// The "Scan meal" card (kind == .scanMeal) opens FoodScannerSheet directly.
+/// - `.scanMeal`      → opens FoodScannerSheet
+/// - `.quickRecovery` → opens RecoveryWorkoutView (full-screen, locked flow)
 struct SecondaryActionsSection: View {
 
     @ObservedObject var vm: TodayViewModel
 
     @AppStorage("anthropicAPIKey") private var apiKey:    String = ""
     @AppStorage("mealsJSON")       private var mealsJSON: String = "[]"
-    @State private var showingScanner = false
+    @State private var showingScanner  = false
+    @State private var showingRecovery = false
 
     private var todayKey: String {
         let fmt = DateFormatter()
@@ -27,13 +29,21 @@ struct SecondaryActionsSection: View {
                 saveMealEntry(entry)
             }
         }
+        .fullScreenCover(isPresented: $showingRecovery) {
+            RecoveryWorkoutView()
+        }
     }
 
     @ViewBuilder
     private func secondaryCard(_ action: SecondaryAction) -> some View {
         Button {
-            if action.kind == .scanMeal {
+            switch action.kind {
+            case .scanMeal:
                 showingScanner = true
+            case .quickRecovery:
+                showingRecovery = true
+            case .general:
+                break
             }
             Haptics.impact(.light)
         } label: {

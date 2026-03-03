@@ -50,6 +50,7 @@
 		BF000000000000000000007F /* PersonalSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000075 /* PersonalSettingsView.swift */; };
 		BF0000000000000000000080 /* GoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000076 /* GoalsView.swift */; };
 		BF0000000000000000000081 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000077 /* NotificationsView.swift */; };
+		BF0000000000000000000084 /* RecoveryWorkoutView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000085 /* RecoveryWorkoutView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -99,6 +100,7 @@
 		BF0000000000000000000075 /* PersonalSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalSettingsView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000076 /* GoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000077 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000085 /* RecoveryWorkoutView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = RecoveryWorkoutView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -150,6 +152,7 @@
 				BF0000000000000000000076 /* GoalsView.swift */,
 				BF0000000000000000000077 /* NotificationsView.swift */,
 				BF0000000000000000000036 /* FoodView.swift */,
+				BF0000000000000000000085 /* RecoveryWorkoutView.swift */,
 				BF000000000000000000004B /* Today */,
 				BF0000000000000000000044 /* Components */,
 			);
@@ -355,6 +358,7 @@
 				BF000000000000000000007F /* PersonalSettingsView.swift in Sources */,
 				BF0000000000000000000080 /* GoalsView.swift in Sources */,
 				BF0000000000000000000081 /* NotificationsView.swift in Sources */,
+				BF0000000000000000000084 /* RecoveryWorkoutView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
