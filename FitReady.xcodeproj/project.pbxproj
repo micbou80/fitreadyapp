@@ -24,6 +24,9 @@
 		BF000000000000000000000F /* ProfileView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000032 /* ProfileView.swift */; };
 		BF0000000000000000000010 /* WeightCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000033 /* WeightCardView.swift */; };
 		BF0000000000000000000011 /* BodyFatCardView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000034 /* BodyFatCardView.swift */; };
+		BF0000000000000000000012 /* MacroEngine.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000035 /* MacroEngine.swift */; };
+		BF0000000000000000000013 /* FoodView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000036 /* FoodView.swift */; };
+		BF0000000000000000000014 /* MacroSummaryCard.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000037 /* MacroSummaryCard.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -47,6 +50,9 @@
 		BF0000000000000000000032 /* ProfileView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ProfileView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000033 /* WeightCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeightCardView.swift; sourceTree = "<group>"; };
 		BF0000000000000000000034 /* BodyFatCardView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = BodyFatCardView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000035 /* MacroEngine.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroEngine.swift; sourceTree = "<group>"; };
+		BF0000000000000000000036 /* FoodView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FoodView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000037 /* MacroSummaryCard.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MacroSummaryCard.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -93,6 +99,7 @@
 				BF0000000000000000000024 /* HistoryView.swift */,
 				BF0000000000000000000025 /* SettingsView.swift */,
 				BF0000000000000000000032 /* ProfileView.swift */,
+				BF0000000000000000000036 /* FoodView.swift */,
 				BF0000000000000000000044 /* Components */,
 			);
 			path = Views;
@@ -105,6 +112,7 @@
 				BF0000000000000000000027 /* MetricCardView.swift */,
 				BF0000000000000000000033 /* WeightCardView.swift */,
 				BF0000000000000000000034 /* BodyFatCardView.swift */,
+				BF0000000000000000000037 /* MacroSummaryCard.swift */,
 			);
 			path = Components;
 			sourceTree = "<group>";
@@ -114,6 +122,7 @@
 			children = (
 				BF0000000000000000000028 /* HealthKitManager.swift */,
 				BF0000000000000000000029 /* ReadinessEngine.swift */,
+				BF0000000000000000000035 /* MacroEngine.swift */,
 			);
 			path = Services;
 			sourceTree = "<group>";
@@ -235,6 +244,9 @@
 				BF000000000000000000000F /* ProfileView.swift in Sources */,
 				BF0000000000000000000010 /* WeightCardView.swift in Sources */,
 				BF0000000000000000000011 /* BodyFatCardView.swift in Sources */,
+				BF0000000000000000000012 /* MacroEngine.swift in Sources */,
+				BF0000000000000000000013 /* FoodView.swift in Sources */,
+				BF0000000000000000000014 /* MacroSummaryCard.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

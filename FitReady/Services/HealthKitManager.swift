@@ -10,6 +10,11 @@ final class HealthKitManager: ObservableObject {
     @Published var baselineMetrics: [DailyMetrics] = []
     @Published var currentWeightKg: Double?
     @Published var currentBodyFatPct: Double?
+    // Nutrition — summed for today
+    @Published var todayKcal: Double?
+    @Published var todayProteinG: Double?
+    @Published var todayFatG: Double?
+    @Published var todayCarbsG: Double?
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
@@ -21,6 +26,10 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.categoryType(forIdentifier: .sleepAnalysis)             { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .bodyMass)                  { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .bodyFatPercentage)         { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .dietaryEnergyConsumed)     { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .dietaryProtein)            { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .dietaryFatTotal)           { types.insert(t) }
+        if let t = HKObjectType.quantityType(forIdentifier: .dietaryCarbohydrates)      { types.insert(t) }
         return types
     }()
 
@@ -49,7 +58,7 @@ final class HealthKitManager: ObservableObject {
 
         let cal = Calendar.current
         let now = Date()
-        let todayStart    = cal.startOfDay(for: now)
+        let todayStart     = cal.startOfDay(for: now)
         let yesterdayStart = cal.date(byAdding: .day, value: -1, to: todayStart)!
 
         // Today: fetch HRV and RHR from the last 24 h, sleep from last night
@@ -65,14 +74,30 @@ final class HealthKitManager: ObservableObject {
         )
 
         // Body weight and body fat — most recent sample ever
-        currentWeightKg    = await fetchLatestBodyMass()
-        currentBodyFatPct  = await fetchLatestBodyFatPercentage()
+        currentWeightKg   = await fetchLatestBodyMass()
+        currentBodyFatPct = await fetchLatestBodyFatPercentage()
+
+        // Nutrition — sum all samples logged today
+        let kcalType    = HKQuantityType.quantityType(forIdentifier: .dietaryEnergyConsumed)
+        let proteinType = HKQuantityType.quantityType(forIdentifier: .dietaryProtein)
+        let fatType     = HKQuantityType.quantityType(forIdentifier: .dietaryFatTotal)
+        let carbsType   = HKQuantityType.quantityType(forIdentifier: .dietaryCarbohydrates)
+
+        async let kcal    = kcalType.map    { fetchDietarySum(type: $0, unit: .kilocalorie(),           from: todayStart, to: now) }
+        async let protein = proteinType.map { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
+        async let fat     = fatType.map     { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
+        async let carbs   = carbsType.map   { fetchDietarySum(type: $0, unit: .gram(),                  from: todayStart, to: now) }
+
+        todayKcal     = await kcal    ?? nil
+        todayProteinG = await protein ?? nil
+        todayFatG     = await fat     ?? nil
+        todayCarbsG   = await carbs   ?? nil
 
         // Baseline: fetch each of the past N days
         var metrics: [DailyMetrics] = []
         for offset in 1...max(1, baselineDays) {
-            let dayStart  = cal.date(byAdding: .day, value: -offset, to: todayStart)!
-            let dayEnd    = cal.date(byAdding: .day, value: 1, to: dayStart)!
+            let dayStart   = cal.date(byAdding: .day, value: -offset, to: todayStart)!
+            let dayEnd     = cal.date(byAdding: .day, value: 1, to: dayStart)!
             let nightStart = cal.date(byAdding: .day, value: -1, to: dayStart)!
 
             async let dHRV   = fetchLatestHRV(from: dayStart, to: dayEnd)
@@ -91,6 +116,30 @@ final class HealthKitManager: ObservableObject {
 
     // MARK: - Private fetch helpers
 
+    /// Sums all nutrition samples of a given type within a date range.
+    private func fetchDietarySum(
+        type: HKQuantityType,
+        unit: HKUnit,
+        from start: Date,
+        to end: Date
+    ) async -> Double? {
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, _ in
+                let total = (samples as? [HKQuantitySample])?.reduce(0.0) {
+                    $0 + $1.quantity.doubleValue(for: unit)
+                }
+                continuation.resume(returning: total.flatMap { $0 > 0 ? $0 : nil })
+            }
+            self.store.execute(query)
+        }
+    }
+
     private func fetchLatestBodyFatPercentage() async -> Double? {
         guard let type = HKQuantityType.quantityType(forIdentifier: .bodyFatPercentage) else { return nil }
         return await withCheckedContinuation { continuation in
@@ -100,7 +149,6 @@ final class HealthKitManager: ObservableObject {
                 limit: 1,
                 sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
             ) { _, samples, _ in
-                // HealthKit stores body fat as a fraction (0.18 = 18%); convert to display percentage
                 guard let sample = samples?.first as? HKQuantitySample else {
                     continuation.resume(returning: nil)
                     return
@@ -146,7 +194,6 @@ final class HealthKitManager: ObservableObject {
         to end: Date
     ) async -> Double? {
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
-
         return await withCheckedContinuation { continuation in
             let query = HKSampleQuery(
                 sampleType: type,

@@ -12,6 +12,9 @@ struct ContentView: View {
             ProfileView()
                 .tabItem { Label("Profile",  systemImage: "person.fill") }
 
+            FoodView()
+                .tabItem { Label("Food",     systemImage: "fork.knife") }
+
             SettingsView()
                 .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }

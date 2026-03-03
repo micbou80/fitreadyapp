@@ -35,6 +35,14 @@ struct MainReadinessView: View {
     @AppStorage("startWeightKg")         private var startWeight: Double = 0
     @AppStorage("startBodyFatPct")       private var startBodyFat: Double = 0
     @AppStorage("weeklyScheduleJSON")    private var weeklyScheduleJSON: String = "{}"
+    // Macro settings
+    @AppStorage("heightCm")             private var heightCm: Double = 0
+    @AppStorage("ageYears")             private var ageYears: Int = 0
+    @AppStorage("biologicalSex")        private var biologicalSex: String = ""
+    @AppStorage("activityLevel")        private var activityLevel: String = "moderate"
+    @AppStorage("weightLossPace")       private var weightLossPace: Double = 0.5
+    @AppStorage("proteinPerKg")         private var proteinPerKg: Double = 1.8
+    @AppStorage("fatFloorPct")          private var fatFloorPct: Double = 25
 
     // MARK: - Computed
 
@@ -57,6 +65,21 @@ struct MainReadinessView: View {
     private var displayBodyFat: Double? {
         if useManualBodyFat { return manualBodyFat > 0 ? manualBodyFat : nil }
         return healthKit.currentBodyFatPct
+    }
+
+    private var macroTargets: MacroTargets? {
+        guard let wt = displayWeight,
+              heightCm > 0, ageYears > 0, !biologicalSex.isEmpty else { return nil }
+        return MacroEngine.compute(
+            weightKg: wt,
+            heightCm: heightCm,
+            ageYears: ageYears,
+            isMale: biologicalSex == "male",
+            activityLevel: activityLevel,
+            paceKgPerWeek: weightLossPace,
+            proteinPerKg: proteinPerKg,
+            fatFloorPct: fatFloorPct
+        )
     }
 
     private var readinessScore: ReadinessScore? {
@@ -197,6 +220,18 @@ struct MainReadinessView: View {
                         current: currentBF,
                         goal: goalBodyFat,
                         start: startBodyFat > 0 ? startBodyFat : nil
+                    )
+                    .padding(.horizontal, 16)
+                }
+
+                // Macro summary card (shown once height/age/sex are set and a weight is known)
+                if let targets = macroTargets {
+                    MacroSummaryCard(
+                        targets: targets,
+                        actualKcal: healthKit.todayKcal,
+                        actualProteinG: healthKit.todayProteinG,
+                        actualFatG: healthKit.todayFatG,
+                        actualCarbsG: healthKit.todayCarbsG
                     )
                     .padding(.horizontal, 16)
                 }
