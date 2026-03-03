@@ -13,8 +13,7 @@ struct SettingsView: View {
     @AppStorage("rhrNeutralThreshold")   private var rhrNeutralThreshold: Double = 1.08
 
     var body: some View {
-        NavigationStack {
-            Form {
+        Form {
                 // MARK: Baseline
                 Section {
                     Stepper("**\(baselineDays)** days", value: $baselineDays, in: 5...14)
@@ -137,8 +136,7 @@ struct SettingsView: View {
                     }
                 }
             }
-            .navigationTitle("Settings")
-        }
+        .navigationTitle("Settings")
     }
 
     // MARK: - Helpers

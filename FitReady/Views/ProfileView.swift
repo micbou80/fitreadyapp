@@ -174,6 +174,14 @@ struct ProfileView: View {
                 iconColor: AppColors.amberText,
                 title: "Notifications"
             ) { NotificationsView() }
+
+            Divider().padding(.leading, 56)
+
+            menuRow(
+                icon: "gearshape.fill",
+                iconColor: Color(.systemGray),
+                title: "Settings"
+            ) { SettingsView() }
         }
         .background(DS.Background.card)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
@@ -208,6 +216,7 @@ struct ProfileView: View {
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)
+            .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
     }

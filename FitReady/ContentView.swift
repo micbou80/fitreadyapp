@@ -15,9 +15,6 @@ struct ContentView: View {
 
             FoodView()
                 .tabItem { Label("Food",     systemImage: "fork.knife") }
-
-            SettingsView()
-                .tabItem { Label("Settings", systemImage: "gearshape.fill") }
         }
         .tint(AppColors.accent)
     }
