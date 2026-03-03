@@ -46,6 +46,9 @@
 		BF0000000000000000000068 /* MiniRing.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000072 /* MiniRing.swift */; };
 		BF0000000000000000000069 /* HapticsManager.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000073 /* HapticsManager.swift */; };
 		BF000000000000000000007E /* WeekCalendarStrip.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000074 /* WeekCalendarStrip.swift */; };
+		BF000000000000000000007F /* PersonalSettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000075 /* PersonalSettingsView.swift */; };
+		BF0000000000000000000080 /* GoalsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000076 /* GoalsView.swift */; };
+		BF0000000000000000000081 /* NotificationsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = BF0000000000000000000077 /* NotificationsView.swift */; };
 /* End PBXBuildFile section */
 
 /* Begin PBXFileReference section */
@@ -91,6 +94,9 @@
 		BF0000000000000000000072 /* MiniRing.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MiniRing.swift; sourceTree = "<group>"; };
 		BF0000000000000000000073 /* HapticsManager.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = HapticsManager.swift; sourceTree = "<group>"; };
 		BF0000000000000000000074 /* WeekCalendarStrip.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = WeekCalendarStrip.swift; sourceTree = "<group>"; };
+		BF0000000000000000000075 /* PersonalSettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = PersonalSettingsView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000076 /* GoalsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = GoalsView.swift; sourceTree = "<group>"; };
+		BF0000000000000000000077 /* NotificationsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = NotificationsView.swift; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -138,6 +144,9 @@
 				BF0000000000000000000024 /* HistoryView.swift */,
 				BF0000000000000000000025 /* SettingsView.swift */,
 				BF0000000000000000000032 /* ProfileView.swift */,
+				BF0000000000000000000075 /* PersonalSettingsView.swift */,
+				BF0000000000000000000076 /* GoalsView.swift */,
+				BF0000000000000000000077 /* NotificationsView.swift */,
 				BF0000000000000000000036 /* FoodView.swift */,
 				BF000000000000000000004B /* Today */,
 				BF0000000000000000000044 /* Components */,
@@ -339,6 +348,9 @@
 				BF0000000000000000000068 /* MiniRing.swift in Sources */,
 				BF0000000000000000000069 /* HapticsManager.swift in Sources */,
 				BF000000000000000000007E /* WeekCalendarStrip.swift in Sources */,
+				BF000000000000000000007F /* PersonalSettingsView.swift in Sources */,
+				BF0000000000000000000080 /* GoalsView.swift in Sources */,
+				BF0000000000000000000081 /* NotificationsView.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

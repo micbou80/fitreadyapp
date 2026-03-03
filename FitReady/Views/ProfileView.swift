@@ -1,337 +1,214 @@
 import SwiftUI
+import PhotosUI
 
+/// Profile hub: circular photo + name + stats row, then nav rows into sub-views.
 struct ProfileView: View {
 
     @EnvironmentObject private var healthKit: HealthKitManager
 
-    @AppStorage("startWeightKg")     private var startWeight: Double = 0
-    @AppStorage("goalWeightKg")      private var goalWeight: Double = 0
-    @AppStorage("manualWeightKg")    private var manualWeight: Double = 0
-    @AppStorage("useManualWeight")   private var useManualWeight: Bool = false
-    @AppStorage("startBodyFatPct")   private var startBodyFat: Double = 0
-    @AppStorage("goalBodyFatPct")    private var goalBodyFat: Double = 0
-    @AppStorage("manualBodyFatPct")  private var manualBodyFat: Double = 0
-    @AppStorage("useManualBodyFat")  private var useManualBodyFat: Bool = false
+    @AppStorage("profilePhotoData") private var profilePhotoData: Data   = Data()
+    @AppStorage("profileName")      private var profileName:      String = ""
+    @AppStorage("ageYears")         private var ageYears:         Int    = 0
+    @AppStorage("heightCm")         private var heightCm:         Double = 0
+    @AppStorage("manualWeightKg")   private var manualWeightKg:   Double = 0
+    @AppStorage("useManualWeight")  private var useManualWeight:  Bool   = false
+    @AppStorage("useImperial")      private var useImperial:      Bool   = false
 
-    @State private var startWeightText: String = ""
-    @State private var goalWeightText: String = ""
-    @State private var manualWeightText: String = ""
-    @State private var startBodyFatText: String = ""
-    @State private var goalBodyFatText: String = ""
-    @State private var manualBodyFatText: String = ""
-    @FocusState private var focusedField: Field?
+    @State private var selectedPhoto: PhotosPickerItem?
 
-    private enum Field {
-        case startWeight, goalWeight, manualWeight
-        case startBodyFat, goalBodyFat, manualBodyFat
+    // MARK: - Derived
+
+    private var displayWeight: Double? {
+        if useManualWeight { return manualWeightKg > 0 ? manualWeightKg : nil }
+        return healthKit.currentWeightKg ?? (manualWeightKg > 0 ? manualWeightKg : nil)
     }
 
-    private var currentWeight: Double? {
-        if useManualWeight { return manualWeight > 0 ? manualWeight : nil }
-        return healthKit.currentWeightKg ?? (manualWeight > 0 ? manualWeight : nil)
+    private var profileImage: Image? {
+        guard !profilePhotoData.isEmpty,
+              let ui = UIImage(data: profilePhotoData) else { return nil }
+        return Image(uiImage: ui)
     }
 
-    private var currentBodyFat: Double? {
-        if useManualBodyFat { return manualBodyFat > 0 ? manualBodyFat : nil }
-        return healthKit.currentBodyFatPct ?? (manualBodyFat > 0 ? manualBodyFat : nil)
+    private var weightString: String {
+        guard let w = displayWeight else { return "—" }
+        if useImperial { return String(format: "%.0f", w * 2.20462) }
+        return String(format: "%.0f", w)
     }
+
+    private var heightString: String {
+        guard heightCm > 0 else { return "—" }
+        if useImperial {
+            let totalInches = heightCm / 2.54
+            let feet  = Int(totalInches / 12)
+            let inch  = Int(totalInches.truncatingRemainder(dividingBy: 12))
+            return "\(feet)'\(inch)\""
+        }
+        return String(format: "%.0f", heightCm)
+    }
+
+    // MARK: - Body
 
     var body: some View {
-        NavigationStack {
-            ZStack {
-                Color(.systemGroupedBackground).ignoresSafeArea()
+        ZStack {
+            DS.Background.page.ignoresSafeArea()
 
-                ScrollView {
-                    VStack(spacing: 20) {
-
-                        // ── WEIGHT ───────────────────────────────────
-
-                        sectionHeader("Weight", icon: "scalemass.fill")
-
-                        if let cw = currentWeight, goalWeight > 0 {
-                            WeightCardView(
-                                current: cw,
-                                goal: goalWeight,
-                                start: startWeight > 0 ? startWeight : nil
-                            )
-                        }
-
-                        formCard {
-                            inputSection(
-                                title: "Starting Weight",
-                                icon: "flag.checkered",
-                                hint: "e.g. 85",
-                                unit: "kg",
-                                text: $startWeightText,
-                                field: .startWeight,
-                                savedValue: startWeight > 0 ? String(format: "%.1f kg saved", startWeight) : nil,
-                                buttonLabel: "Save Starting Weight",
-                                tint: .purple,
-                                onSave: saveStartWeight
-                            )
-                        }
-
-                        formCard {
-                            inputSection(
-                                title: "Goal Weight",
-                                icon: "flag.fill",
-                                hint: "e.g. 72",
-                                unit: "kg",
-                                text: $goalWeightText,
-                                field: .goalWeight,
-                                savedValue: goalWeight > 0 ? String(format: "%.1f kg saved", goalWeight) : nil,
-                                buttonLabel: "Save Goal",
-                                tint: .accentColor,
-                                onSave: saveGoalWeight
-                            )
-                        }
-
-                        formCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("Current Weight", systemImage: "scalemass")
-                                    .font(.headline)
-
-                                if let hkWeight = healthKit.currentWeightKg {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(String(format: "%.1f kg", hkWeight))
-                                                .font(.system(size: 28, weight: .bold, design: .rounded))
-                                            Text("From Apple Health")
-                                                .font(.caption)
-                                                .foregroundStyle(Color(.secondaryLabel))
-                                        }
-                                        Spacer()
-                                        Image(systemName: "heart.fill").foregroundStyle(.red)
-                                    }
-                                    Toggle("Use manual entry instead", isOn: $useManualWeight)
-                                        .font(.subheadline)
-                                }
-
-                                if useManualWeight || healthKit.currentWeightKg == nil {
-                                    HStack {
-                                        TextField("e.g. 78.5", text: $manualWeightText)
-                                            .keyboardType(.decimalPad)
-                                            .focused($focusedField, equals: .manualWeight)
-                                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                                            .onSubmit { saveManualWeight() }
-                                        Text("kg")
-                                            .font(.title2)
-                                            .foregroundStyle(Color(.secondaryLabel))
-                                    }
-                                    Button("Save Weight") { saveManualWeight() }
-                                        .buttonStyle(.borderedProminent)
-                                        .tint(.orange)
-                                        .disabled(manualWeightText.isEmpty)
-                                }
-                            }
-                        }
-
-                        disclaimer("Weight from Apple Health updates automatically when you weigh yourself.")
-
-                        // ── BODY FAT ─────────────────────────────────
-
-                        sectionHeader("Body Fat", icon: "figure.stand")
-
-                        if let bf = currentBodyFat, goalBodyFat > 0 {
-                            BodyFatCardView(
-                                current: bf,
-                                goal: goalBodyFat,
-                                start: startBodyFat > 0 ? startBodyFat : nil
-                            )
-                        }
-
-                        formCard {
-                            inputSection(
-                                title: "Starting Body Fat",
-                                icon: "flag.checkered",
-                                hint: "e.g. 26",
-                                unit: "%",
-                                text: $startBodyFatText,
-                                field: .startBodyFat,
-                                savedValue: startBodyFat > 0 ? String(format: "%.1f%% saved", startBodyFat) : nil,
-                                buttonLabel: "Save Starting Body Fat",
-                                tint: .purple,
-                                onSave: saveStartBodyFat
-                            )
-                        }
-
-                        formCard {
-                            inputSection(
-                                title: "Goal Body Fat",
-                                icon: "chart.bar.fill",
-                                hint: "e.g. 18",
-                                unit: "%",
-                                text: $goalBodyFatText,
-                                field: .goalBodyFat,
-                                savedValue: goalBodyFat > 0 ? String(format: "%.1f%% saved", goalBodyFat) : nil,
-                                buttonLabel: "Save Goal",
-                                tint: .accentColor,
-                                onSave: saveGoalBodyFat
-                            )
-                        }
-
-                        formCard {
-                            VStack(alignment: .leading, spacing: 14) {
-                                Label("Current Body Fat", systemImage: "figure.stand")
-                                    .font(.headline)
-
-                                if let hkBF = healthKit.currentBodyFatPct {
-                                    HStack {
-                                        VStack(alignment: .leading, spacing: 2) {
-                                            Text(String(format: "%.1f%%", hkBF))
-                                                .font(.system(size: 28, weight: .bold, design: .rounded))
-                                            Text("From Apple Health")
-                                                .font(.caption)
-                                                .foregroundStyle(Color(.secondaryLabel))
-                                        }
-                                        Spacer()
-                                        Image(systemName: "heart.fill").foregroundStyle(.red)
-                                    }
-                                    Toggle("Use manual entry instead", isOn: $useManualBodyFat)
-                                        .font(.subheadline)
-                                }
-
-                                if useManualBodyFat || healthKit.currentBodyFatPct == nil {
-                                    HStack {
-                                        TextField("e.g. 22.5", text: $manualBodyFatText)
-                                            .keyboardType(.decimalPad)
-                                            .focused($focusedField, equals: .manualBodyFat)
-                                            .font(.system(size: 32, weight: .bold, design: .rounded))
-                                            .onSubmit { saveManualBodyFat() }
-                                        Text("%")
-                                            .font(.title2)
-                                            .foregroundStyle(Color(.secondaryLabel))
-                                    }
-                                    Button("Save Body Fat") { saveManualBodyFat() }
-                                        .buttonStyle(.borderedProminent)
-                                        .tint(.orange)
-                                        .disabled(manualBodyFatText.isEmpty)
-                                }
-                            }
-                        }
-
-                        disclaimer("Body fat from Apple Health updates when synced from a compatible scale.")
-                    }
-                    .padding()
+            ScrollView {
+                VStack(spacing: DS.Spacing.xl) {
+                    headerCard
+                    menuCard
+                    Spacer(minLength: DS.Spacing.xl)
                 }
-                .onTapGesture { focusedField = nil }
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.top, DS.Spacing.md)
             }
-            .navigationTitle("Profile")
-            .onAppear {
-                if startWeight   > 0 { startWeightText   = String(format: "%.1f", startWeight)   }
-                if goalWeight    > 0 { goalWeightText    = String(format: "%.1f", goalWeight)    }
-                if manualWeight  > 0 { manualWeightText  = String(format: "%.1f", manualWeight)  }
-                if startBodyFat  > 0 { startBodyFatText  = String(format: "%.1f", startBodyFat)  }
-                if goalBodyFat   > 0 { goalBodyFatText   = String(format: "%.1f", goalBodyFat)   }
-                if manualBodyFat > 0 { manualBodyFatText = String(format: "%.1f", manualBodyFat) }
+        }
+        .navigationTitle("Profile")
+        .navigationBarTitleDisplayMode(.inline)
+        .onChange(of: selectedPhoto) { _, item in
+            Task {
+                guard let data = try? await item?.loadTransferable(type: Data.self),
+                      let ui = UIImage(data: data) else { return }
+                let size = CGSize(width: 200, height: 200)
+                let renderer = UIGraphicsImageRenderer(size: size)
+                let cropped = renderer.image { _ in
+                    ui.draw(in: CGRect(origin: .zero, size: size))
+                }
+                if let jpg = cropped.jpegData(compressionQuality: 0.75) {
+                    profilePhotoData = jpg
+                }
             }
         }
     }
 
-    // MARK: - Layout helpers
+    // MARK: - Header card
 
-    @ViewBuilder
-    private func sectionHeader(_ title: String, icon: String) -> some View {
-        HStack(spacing: 6) {
-            Image(systemName: icon).foregroundStyle(Color.accentColor)
-            Text(title.uppercased())
-                .font(.system(size: 12, weight: .bold))
+    private var headerCard: some View {
+        VStack(spacing: DS.Spacing.md) {
+
+            // Photo with pencil overlay
+            ZStack(alignment: .bottomTrailing) {
+                Group {
+                    if let img = profileImage {
+                        img
+                            .resizable()
+                            .scaledToFill()
+                    } else {
+                        Image(systemName: "person.fill")
+                            .font(.system(size: 44))
+                            .foregroundStyle(Color(.tertiaryLabel))
+                            .frame(maxWidth: .infinity, maxHeight: .infinity)
+                            .background(Color(.quaternarySystemFill))
+                    }
+                }
+                .frame(width: 90, height: 90)
+                .clipShape(Circle())
+
+                PhotosPicker(selection: $selectedPhoto, matching: .images) {
+                    Image(systemName: "pencil.circle.fill")
+                        .font(.system(size: 28))
+                        .foregroundStyle(.purple)
+                        .background(
+                            Circle()
+                                .fill(DS.Background.card)
+                                .frame(width: 22, height: 22)
+                        )
+                }
+                .offset(x: 3, y: 3)
+            }
+
+            // Name
+            Text(profileName.isEmpty ? "Tap pencil to add photo" : profileName)
+                .font(.system(size: 20, weight: .semibold, design: .rounded))
+                .foregroundStyle(profileName.isEmpty ? Color(.tertiaryLabel) : Color(.label))
+
+            // Stats row
+            HStack(spacing: 0) {
+                statItem(value: weightString, label: useImperial ? "lbs" : "kg")
+                Divider().frame(height: 32)
+                statItem(value: heightString, label: useImperial ? "ft" : "cm")
+                Divider().frame(height: 32)
+                statItem(value: ageYears > 0 ? "\(ageYears)" : "—", label: "age")
+            }
+            .padding(.top, DS.Spacing.xs)
+        }
+        .padding(DS.Spacing.lg)
+        .frame(maxWidth: .infinity)
+        .background(DS.Background.card)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
+    }
+
+    private func statItem(value: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(.system(size: 18, weight: .semibold, design: .rounded))
+            Text(label)
+                .font(DS.Typography.caption())
                 .foregroundStyle(Color(.secondaryLabel))
-                .kerning(0.8)
-            Spacer()
         }
-        .padding(.top, 4)
-        .padding(.horizontal, 2)
+        .frame(maxWidth: .infinity)
+    }
+
+    // MARK: - Menu card
+
+    private var menuCard: some View {
+        VStack(spacing: 0) {
+            menuRow(
+                icon: "person.text.rectangle.fill",
+                iconColor: Color(hex: "5B4FCF"),
+                title: "Personal"
+            ) { PersonalSettingsView() }
+
+            Divider().padding(.leading, 56)
+
+            menuRow(
+                icon: "target",
+                iconColor: Color(hex: "1B7D38"),
+                title: "Goals"
+            ) { GoalsView() }
+
+            Divider().padding(.leading, 56)
+
+            menuRow(
+                icon: "bell.fill",
+                iconColor: Color(hex: "B45309"),
+                title: "Notifications"
+            ) { NotificationsView() }
+        }
+        .background(DS.Background.card)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
     @ViewBuilder
-    private func formCard<Content: View>(@ViewBuilder content: () -> Content) -> some View {
-        content()
-            .padding()
-            .frame(maxWidth: .infinity, alignment: .leading)
-            .background(Color(.systemBackground))
-            .clipShape(RoundedRectangle(cornerRadius: 16))
-            .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-    }
-
-    @ViewBuilder
-    private func inputSection(
-        title: String,
+    private func menuRow<Dest: View>(
         icon: String,
-        hint: String,
-        unit: String,
-        text: Binding<String>,
-        field: Field,
-        savedValue: String?,
-        buttonLabel: String,
-        tint: Color,
-        onSave: @escaping () -> Void
+        iconColor: Color,
+        title: String,
+        @ViewBuilder destination: () -> Dest
     ) -> some View {
-        VStack(alignment: .leading, spacing: 14) {
-            Label(title, systemImage: icon).font(.headline)
+        NavigationLink(destination: destination()) {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: icon)
+                    .font(.system(size: 15, weight: .medium))
+                    .foregroundStyle(iconColor)
+                    .frame(width: 36, height: 36)
+                    .background(iconColor.opacity(0.12))
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
 
-            HStack {
-                TextField(hint, text: text)
-                    .keyboardType(.decimalPad)
-                    .focused($focusedField, equals: field)
-                    .font(.system(size: 32, weight: .bold, design: .rounded))
-                    .onSubmit { onSave() }
-                Text(unit)
-                    .font(.title2)
-                    .foregroundStyle(Color(.secondaryLabel))
+                Text(title)
+                    .font(DS.Typography.body())
+                    .foregroundStyle(Color(.label))
+
+                Spacer()
+
+                Image(systemName: "chevron.right")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(Color(.tertiaryLabel))
             }
-
-            if let saved = savedValue {
-                Text(saved)
-                    .font(.caption)
-                    .foregroundStyle(Color(.secondaryLabel))
-            }
-
-            Button(buttonLabel, action: onSave)
-                .buttonStyle(.borderedProminent)
-                .tint(tint)
-                .disabled(text.wrappedValue.isEmpty)
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
         }
-    }
-
-    @ViewBuilder
-    private func disclaimer(_ text: String) -> some View {
-        Text(text)
-            .font(.caption)
-            .foregroundStyle(Color(.tertiaryLabel))
-            .multilineTextAlignment(.center)
-            .padding(.horizontal)
-    }
-
-    // MARK: - Save helpers
-
-    private func saveStartWeight() {
-        if let v = Double(startWeightText.replacingOccurrences(of: ",", with: ".")) { startWeight = v }
-        focusedField = nil
-    }
-
-    private func saveGoalWeight() {
-        if let v = Double(goalWeightText.replacingOccurrences(of: ",", with: ".")) { goalWeight = v }
-        focusedField = nil
-    }
-
-    private func saveManualWeight() {
-        if let v = Double(manualWeightText.replacingOccurrences(of: ",", with: ".")) { manualWeight = v }
-        focusedField = nil
-    }
-
-    private func saveStartBodyFat() {
-        if let v = Double(startBodyFatText.replacingOccurrences(of: ",", with: ".")) { startBodyFat = v }
-        focusedField = nil
-    }
-
-    private func saveGoalBodyFat() {
-        if let v = Double(goalBodyFatText.replacingOccurrences(of: ",", with: ".")) { goalBodyFat = v }
-        focusedField = nil
-    }
-
-    private func saveManualBodyFat() {
-        if let v = Double(manualBodyFatText.replacingOccurrences(of: ",", with: ".")) { manualBodyFat = v }
-        focusedField = nil
+        .buttonStyle(.plain)
     }
 }

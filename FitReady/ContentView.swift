@@ -10,7 +10,7 @@ struct ContentView: View {
             InsightsView()
                 .tabItem { Label("Insights", systemImage: "chart.bar.fill") }
 
-            ProfileView()
+            NavigationStack { ProfileView() }
                 .tabItem { Label("Profile",  systemImage: "person.fill") }
 
             FoodView()
