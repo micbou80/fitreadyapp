@@ -203,10 +203,16 @@ struct PersonalSettingsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
             }
-            .simultaneousGesture(TapGesture().onEnded { focusedField = nil })
+            .scrollDismissesKeyboard(.immediately)
         }
         .navigationTitle("Personal")
         .navigationBarTitleDisplayMode(.inline)
+        .toolbar {
+            ToolbarItemGroup(placement: .keyboard) {
+                Spacer()
+                Button("Done") { focusedField = nil }
+            }
+        }
         .onAppear { loadFields() }
     }
 

@@ -21,7 +21,7 @@ struct GoalsView: View {
     @AppStorage("useImperial")      private var useImperial:      Bool   = false
     @AppStorage("anthropicAPIKey")  private var apiKey:           String = ""
 
-    @State private var selectedPaceKey:    String = "moderate"
+    @State private var paceSliderValue:    Double = 0.5
     @State private var goalWeightText:     String = ""
     @State private var goalFatPctText:     String = ""
     @State private var targetDate:         Date   = Calendar.current.date(byAdding: .month, value: 3, to: Date()) ?? Date()
@@ -45,12 +45,6 @@ struct GoalsView: View {
         ("muscle",   "Build muscle", "dumbbell.fill",           AppColors.redText),
     ]
 
-    private let paces: [(key: String, label: String, desc: String, value: Double)] = [
-        ("relaxed",    "Relaxed",    "~0.25 kg/week — gentle progress, easier to stick with",   0.25),
-        ("moderate",   "Moderate",   "~0.5 kg/week — the sweet spot for most people",            0.50),
-        ("aggressive", "Aggressive", "~0.75 kg/week — faster results, higher discipline needed", 0.75),
-    ]
-
     private var effectiveWeight: Double? {
         if useManualWeight { return manualWeightKg > 0 ? manualWeightKg : nil }
         return healthKit.currentWeightKg ?? (manualWeightKg > 0 ? manualWeightKg : nil)
@@ -58,21 +52,35 @@ struct GoalsView: View {
 
     private var paceApplies: Bool { primaryGoal == "lose" || primaryGoal == "gain" }
 
+    private var currentPaceLabel: String {
+        switch paceSliderValue {
+        case 0.25: return "Relaxed"
+        case 0.75: return "Aggressive"
+        default:   return "Moderate"
+        }
+    }
+
+    private var currentPaceDesc: String {
+        switch paceSliderValue {
+        case 0.25: return "~0.25 kg/week — gentle progress, easier to stick with"
+        case 0.75: return "~0.75 kg/week — faster results, higher discipline needed"
+        default:   return "~0.5 kg/week — the sweet spot for most people"
+        }
+    }
+
     private var weeksToGoal: Double? {
         guard let weight = effectiveWeight, weight > 0,
               goalWeightKg > 0,
               primaryGoal == "lose" || primaryGoal == "gain" else { return nil }
         let diff = abs(weight - goalWeightKg)
-        let pace = paces.first { $0.key == selectedPaceKey }?.value ?? 0.5
-        guard pace > 0 else { return nil }
-        return diff / pace
+        guard paceSliderValue > 0 else { return nil }
+        return diff / paceSliderValue
     }
 
     private var dailyDeficit: Int {
-        let pace = paces.first { $0.key == selectedPaceKey }?.value ?? 0.5
         switch primaryGoal {
-        case "lose":  return  Int(pace * 7700 / 7)
-        case "gain":  return -Int(pace * 7700 / 7)
+        case "lose":  return  Int(paceSliderValue * 7700 / 7)
+        case "gain":  return -Int(paceSliderValue * 7700 / 7)
         default:      return  0
         }
     }
@@ -98,42 +106,7 @@ struct GoalsView: View {
             ScrollView {
                 VStack(spacing: DS.Spacing.lg) {
 
-                    // ── Primary goal ─────────────────────────────────
-                    settingsCard {
-                        sectionLabel("Primary Goal")
-                        VStack(spacing: 0) {
-                            ForEach(Array(goals.enumerated()), id: \.element.key) { idx, goal in
-                                if idx > 0 { Divider().padding(.leading, 52) }
-                                goalRow(goal)
-                            }
-                        }
-                        .padding(.horizontal, DS.Spacing.lg)
-                        .padding(.bottom, DS.Spacing.md)
-                    }
-
-                    // ── Pace (lose / gain only) ───────────────────────
-                    if paceApplies {
-                        settingsCard {
-                            sectionLabel("Weekly Pace")
-                            VStack(spacing: 0) {
-                                ForEach(Array(paces.enumerated()), id: \.element.key) { idx, pace in
-                                    if idx > 0 { Divider().padding(.leading, 52) }
-                                    paceRow(pace)
-                                }
-                            }
-                            .padding(.horizontal, DS.Spacing.lg)
-                            .padding(.bottom, DS.Spacing.sm)
-
-                            Text("A more aggressive pace may reduce muscle retention.")
-                                .font(DS.Typography.caption())
-                                .foregroundStyle(Color(.secondaryLabel))
-                                .frame(maxWidth: .infinity, alignment: .leading)
-                                .padding(.horizontal, DS.Spacing.lg)
-                                .padding(.bottom, DS.Spacing.md)
-                        }
-                    }
-
-                    // ── Your targets ─────────────────────────────────
+                    // ── Your targets (top) ────────────────────────────
                     settingsCard {
                         sectionLabel("Your Targets")
 
@@ -210,6 +183,67 @@ struct GoalsView: View {
                         }
                     }
 
+                    // ── Primary goal ──────────────────────────────────
+                    settingsCard {
+                        sectionLabel("Primary Goal")
+                        VStack(spacing: 0) {
+                            ForEach(Array(goals.enumerated()), id: \.element.key) { idx, goal in
+                                if idx > 0 { Divider().padding(.leading, 52) }
+                                goalRow(goal)
+                            }
+                        }
+                        .padding(.horizontal, DS.Spacing.lg)
+                        .padding(.bottom, DS.Spacing.md)
+                    }
+
+                    // ── Pace (lose / gain only) ───────────────────────
+                    if paceApplies {
+                        settingsCard {
+                            sectionLabel("Weekly Pace")
+
+                            VStack(spacing: DS.Spacing.sm) {
+                                Slider(value: $paceSliderValue, in: 0.25...0.75, step: 0.25)
+                                    .tint(AppColors.accent)
+                                    .padding(.horizontal, DS.Spacing.lg)
+                                    .onChange(of: paceSliderValue) { _, _ in
+                                        Haptics.impact(.light)
+                                    }
+
+                                HStack {
+                                    Text("Relaxed")
+                                        .font(.caption)
+                                        .foregroundStyle(Color(.tertiaryLabel))
+                                    Spacer()
+                                    Text("Aggressive")
+                                        .font(.caption)
+                                        .foregroundStyle(Color(.tertiaryLabel))
+                                }
+                                .padding(.horizontal, DS.Spacing.lg)
+
+                                VStack(alignment: .leading, spacing: 2) {
+                                    Text(currentPaceLabel)
+                                        .font(.system(size: 15, weight: .semibold))
+                                        .foregroundStyle(Color(.label))
+                                    Text(currentPaceDesc)
+                                        .font(DS.Typography.caption())
+                                        .foregroundStyle(Color(.secondaryLabel))
+                                        .fixedSize(horizontal: false, vertical: true)
+                                }
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.bottom, DS.Spacing.xs)
+                            }
+                            .padding(.top, DS.Spacing.xs)
+
+                            Text("A more aggressive pace may reduce muscle retention.")
+                                .font(DS.Typography.caption())
+                                .foregroundStyle(Color(.secondaryLabel))
+                                .frame(maxWidth: .infinity, alignment: .leading)
+                                .padding(.horizontal, DS.Spacing.lg)
+                                .padding(.bottom, DS.Spacing.md)
+                        }
+                    }
+
                     // ── Missing stats warning ─────────────────────────
                     if missingStats {
                         HStack(spacing: DS.Spacing.sm) {
@@ -244,7 +278,7 @@ struct GoalsView: View {
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
             }
-            .simultaneousGesture(TapGesture().onEnded { focusedField = nil })
+            .scrollDismissesKeyboard(.immediately)
         }
         .navigationTitle("Goals")
         .navigationBarTitleDisplayMode(.inline)
@@ -255,20 +289,20 @@ struct GoalsView: View {
             }
         }
         .onAppear {
-            syncPaceKey()
+            syncPaceSlider()
             loadGoalFields()
         }
         .sheet(isPresented: $showingPlanSplash) {
             if let targets = pendingTargets {
                 PlanSplashView(
-                    targets:          targets,
-                    goalLabel:        goals.first { $0.key == primaryGoal }?.label ?? primaryGoal,
-                    weeksToGoal:      weeksToGoal,
-                    dailyDeficit:     dailyDeficit,
+                    targets:           targets,
+                    goalLabel:         goals.first { $0.key == primaryGoal }?.label ?? primaryGoal,
+                    weeksToGoal:       weeksToGoal,
+                    dailyDeficit:      dailyDeficit,
                     goalWeightDisplay: goalWeightDisplayString,
-                    bodyFatGoal:      goalBodyFatPct > 0 ? goalBodyFatPct : nil,
-                    targetDate:       (targetDateChosen || goalTargetDateTS > 0) ? targetDate : nil,
-                    coaching:         coaching,
+                    bodyFatGoal:       goalBodyFatPct > 0 ? goalBodyFatPct : nil,
+                    targetDate:        (targetDateChosen || goalTargetDateTS > 0) ? targetDate : nil,
+                    coaching:          coaching,
                     isLoadingCoaching: isLoadingCoaching,
                     onAdjust: { showingPlanSplash = false },
                     onLetsGo: {
@@ -311,35 +345,6 @@ struct GoalsView: View {
         .buttonStyle(.plain)
     }
 
-    @ViewBuilder
-    private func paceRow(_ pace: (key: String, label: String, desc: String, value: Double)) -> some View {
-        Button {
-            selectedPaceKey = pace.key
-            Haptics.impact(.light)
-        } label: {
-            HStack(alignment: .top, spacing: DS.Spacing.md) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text(pace.label)
-                        .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color(.label))
-                    Text(pace.desc)
-                        .font(DS.Typography.caption())
-                        .foregroundStyle(Color(.secondaryLabel))
-                        .fixedSize(horizontal: false, vertical: true)
-                }
-                Spacer()
-                if selectedPaceKey == pace.key {
-                    Image(systemName: "checkmark.circle.fill")
-                        .foregroundStyle(AppColors.accent)
-                        .padding(.top, 1)
-                }
-            }
-            .padding(.vertical, DS.Spacing.md)
-            .contentShape(Rectangle())
-        }
-        .buttonStyle(.plain)
-    }
-
     // MARK: - Personalize
 
     private func personalizeMyPlan() {
@@ -354,11 +359,10 @@ struct GoalsView: View {
         }
 
         // Persist pace
-        let paceValue = paces.first { $0.key == selectedPaceKey }?.value ?? 0.5
         let effectivePace: Double
         switch primaryGoal {
-        case "lose":  effectivePace =  paceValue
-        case "gain":  effectivePace = -paceValue
+        case "lose":  effectivePace =  paceSliderValue
+        case "gain":  effectivePace = -paceSliderValue
         default:      effectivePace =  0
         }
         weightLossPace = effectivePace
@@ -387,34 +391,48 @@ struct GoalsView: View {
         )
         guard pendingTargets != nil else { return }
 
-        // Show splash
+        // Show splash — always animate for ≥ 3 seconds
         coaching = nil
-        isLoadingCoaching = !apiKey.isEmpty
+        isLoadingCoaching = true
         showingPlanSplash = true
 
-        // Fetch coaching (fire-and-forget; updates splash when done)
-        if !apiKey.isEmpty {
-            let capturedKcal    = pendingTargets?.kcal ?? 0
-            let capturedWeight  = weight
-            let capturedGoalWt  = goalWeightKg > 0 ? goalWeightKg : nil
-            let capturedWeeks   = weeksToGoal
-            Task {
+        let capturedStart  = Date()
+        let capturedKcal   = pendingTargets?.kcal ?? 0
+        let capturedWeight = weight
+        let capturedGoalWt = goalWeightKg > 0 ? goalWeightKg : nil
+        let capturedWeeks  = weeksToGoal
+        let capturedGoal   = primaryGoal
+
+        Task {
+            let minDelay = 3.0
+            if !apiKey.isEmpty {
                 do {
-                    coaching = try await AnthropicService.generatePlanCoaching(
-                        goal:           primaryGoal,
+                    let result = try await AnthropicService.generatePlanCoaching(
+                        goal:            capturedGoal,
                         currentWeightKg: capturedWeight,
-                        goalWeightKg:   capturedGoalWt,
-                        weeksToGoal:    capturedWeeks,
-                        dailyKcal:      capturedKcal,
-                        apiKey:         apiKey
+                        goalWeightKg:    capturedGoalWt,
+                        weeksToGoal:     capturedWeeks,
+                        dailyKcal:       capturedKcal,
+                        apiKey:          apiKey
                     )
+                    let elapsed = Date().timeIntervalSince(capturedStart)
+                    let remaining = max(0, minDelay - elapsed)
+                    if remaining > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+                    }
+                    coaching = result
                 } catch {
+                    let elapsed = Date().timeIntervalSince(capturedStart)
+                    let remaining = max(0, minDelay - elapsed)
+                    if remaining > 0 {
+                        try? await Task.sleep(nanoseconds: UInt64(remaining * 1_000_000_000))
+                    }
                     coaching = fallbackCoaching
                 }
-                isLoadingCoaching = false
+            } else {
+                try? await Task.sleep(nanoseconds: UInt64(minDelay * 1_000_000_000))
+                coaching = fallbackCoaching
             }
-        } else {
-            coaching = fallbackCoaching
             isLoadingCoaching = false
         }
 
@@ -478,11 +496,11 @@ struct GoalsView: View {
         }
     }
 
-    private func syncPaceKey() {
-        switch abs(weightLossPace) {
-        case 0.25: selectedPaceKey = "relaxed"
-        case 0.75: selectedPaceKey = "aggressive"
-        default:   selectedPaceKey = "moderate"
+    private func syncPaceSlider() {
+        let pace = abs(weightLossPace)
+        if pace > 0 {
+            let rounded = (pace / 0.25).rounded() * 0.25
+            paceSliderValue = min(max(rounded, 0.25), 0.75)
         }
     }
 
@@ -549,6 +567,15 @@ private struct PlanSplashView: View {
     let onAdjust:          () -> Void
     let onLetsGo:          () -> Void
 
+    @State private var thinkingPhase: Int = 0
+
+    private let thinkingPhrases = [
+        "Analysing your goals…",
+        "Crunching the numbers…",
+        "Crafting your plan…",
+        "Almost there…"
+    ]
+
     private var realismLabel: String {
         guard let weeks = weeksToGoal else {
             return dailyDeficit == 0 ? "Balanced" : "Achievable"
@@ -595,7 +622,6 @@ private struct PlanSplashView: View {
 
             // Pinned bottom buttons
             VStack(spacing: 0) {
-                // Subtle gradient fade above buttons
                 LinearGradient(
                     colors: [AppColors.background.opacity(0), AppColors.background],
                     startPoint: .top, endPoint: .bottom
@@ -667,13 +693,13 @@ private struct PlanSplashView: View {
                 .foregroundStyle(Color(.secondaryLabel))
 
             HStack(spacing: 0) {
-                macroCell(value: "\(targets.kcal)",       label: "kcal",    color: AppColors.dataCalories)
+                macroCell(value: "\(targets.kcal)",      label: "kcal",    color: AppColors.dataCalories)
                 Divider().frame(height: 36)
-                macroCell(value: "\(targets.proteinG)g",  label: "protein", color: AppColors.dataProtein)
+                macroCell(value: "\(targets.proteinG)g", label: "protein", color: AppColors.dataProtein)
                 Divider().frame(height: 36)
-                macroCell(value: "\(targets.fatG)g",      label: "fat",     color: AppColors.dataFat)
+                macroCell(value: "\(targets.fatG)g",     label: "fat",     color: AppColors.dataFat)
                 Divider().frame(height: 36)
-                macroCell(value: "\(targets.carbsG)g",    label: "carbs",   color: AppColors.dataCarbs)
+                macroCell(value: "\(targets.carbsG)g",   label: "carbs",   color: AppColors.dataCarbs)
             }
         }
         .padding(16)
@@ -742,16 +768,31 @@ private struct PlanSplashView: View {
 
     private var loadingCard: some View {
         HStack(spacing: 12) {
-            ProgressView().scaleEffect(0.9)
-            Text("Personalising your coaching tips…")
+            Image(systemName: "sparkles")
+                .font(.system(size: 18, weight: .medium))
+                .foregroundStyle(AppColors.accent)
+                .symbolEffect(.pulse)
+
+            Text(thinkingPhrases[thinkingPhase % thinkingPhrases.count])
                 .font(.subheadline)
                 .foregroundStyle(Color(.secondaryLabel))
+                .id(thinkingPhase)
+                .transition(.opacity.combined(with: .move(edge: .bottom)))
+                .animation(.easeInOut(duration: 0.35), value: thinkingPhase)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(16)
         .background(AppColors.card)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: AppColors.shadowColor, radius: 6, x: 0, y: 2)
+        .task(id: isLoadingCoaching) {
+            guard isLoadingCoaching else { return }
+            while !Task.isCancelled && isLoadingCoaching {
+                try? await Task.sleep(nanoseconds: 900_000_000)
+                guard isLoadingCoaching, !Task.isCancelled else { return }
+                withAnimation { thinkingPhase += 1 }
+            }
+        }
     }
 
     private func tipsCard(_ tips: [String]) -> some View {
