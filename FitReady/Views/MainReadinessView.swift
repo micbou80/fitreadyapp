@@ -166,6 +166,13 @@ struct MainReadinessView: View {
                             .padding(.horizontal, 32)
                             .padding(.top, 2)
                     }
+
+                    if let t = healthKit.lastLoadedAt {
+                        Text("Updated \(t.formatted(.dateTime.hour().minute()))")
+                            .font(.caption2)
+                            .foregroundStyle(Color(.tertiaryLabel))
+                            .padding(.top, 4)
+                    }
                 }
                 .padding(.top, 8)
 

@@ -18,6 +18,7 @@ final class HealthKitManager: ObservableObject {
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
+    @Published var lastLoadedAt: Date?
 
     private let readTypes: Set<HKObjectType> = {
         var types = Set<HKObjectType>()
@@ -61,9 +62,10 @@ final class HealthKitManager: ObservableObject {
         let todayStart     = cal.startOfDay(for: now)
         let yesterdayStart = cal.date(byAdding: .day, value: -1, to: todayStart)!
 
-        // Today: fetch HRV and RHR from the last 24 h, sleep from last night
-        async let hrv   = fetchLatestHRV(from: yesterdayStart, to: now)
-        async let rhr   = fetchLatestRHR(from: yesterdayStart, to: now)
+        // Today: HRV and RHR from the overnight window (10pm → 8am), sleep from last night
+        let (oStart, oEnd) = overnightWindow(for: todayStart)
+        async let hrv   = fetchAverageHRV(from: oStart, to: oEnd)
+        async let rhr   = fetchLatestRHR(from: oStart, to: oEnd)
         async let sleep = fetchSleepHours(nightStartingAt: yesterdayStart)
 
         todayMetrics = DailyMetrics(
@@ -95,7 +97,9 @@ final class HealthKitManager: ObservableObject {
             let dayEnd     = cal.date(byAdding: .day, value: 1, to: dayStart)!
             let nightStart = cal.date(byAdding: .day, value: -1, to: dayStart)!
 
-            async let dHRV   = fetchLatestHRV(from: dayStart, to: dayEnd)
+            // HRV: overnight window for consistency with today's fetch
+            let (bStart, bEnd) = overnightWindow(for: dayStart)
+            async let dHRV   = fetchAverageHRV(from: bStart, to: bEnd)
             async let dRHR   = fetchLatestRHR(from: dayStart, to: dayEnd)
             async let dSleep = fetchSleepHours(nightStartingAt: nightStart)
 
@@ -107,6 +111,7 @@ final class HealthKitManager: ObservableObject {
             ))
         }
         baselineMetrics = metrics
+        lastLoadedAt = Date()
     }
 
     // MARK: - Private fetch helpers
@@ -169,6 +174,47 @@ final class HealthKitManager: ObservableObject {
             }
             store.execute(query)
         }
+    }
+
+    /// Returns the overnight window (10pm of previous day → 8am of dayStart) for stable recovery metrics.
+    private func overnightWindow(for dayStart: Date) -> (start: Date, end: Date) {
+        let cal = Calendar.current
+        let prevDay = cal.date(byAdding: .day, value: -1, to: dayStart)!
+        var startComps = cal.dateComponents([.year, .month, .day], from: prevDay)
+        startComps.hour = 22
+        let start = cal.date(from: startComps)!
+        var endComps = cal.dateComponents([.year, .month, .day], from: dayStart)
+        endComps.hour = 8
+        let end = cal.date(from: endComps)!
+        return (start, end)
+    }
+
+    /// Averages all quantity samples in the window; returns nil when no samples exist.
+    private func fetchAverageQuantity(
+        type: HKQuantityType,
+        unit: HKUnit,
+        from start: Date,
+        to end: Date
+    ) async -> Double? {
+        let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: nil
+            ) { _, samples, _ in
+                let values = (samples as? [HKQuantitySample])?.map { $0.quantity.doubleValue(for: unit) } ?? []
+                guard !values.isEmpty else { continuation.resume(returning: nil); return }
+                continuation.resume(returning: values.reduce(0, +) / Double(values.count))
+            }
+            self.store.execute(query)
+        }
+    }
+
+    private func fetchAverageHRV(from start: Date, to end: Date) async -> Double? {
+        guard let type = HKQuantityType.quantityType(forIdentifier: .heartRateVariabilitySDNN) else { return nil }
+        return await fetchAverageQuantity(type: type, unit: HKUnit.secondUnit(with: .milli), from: start, to: end)
     }
 
     private func fetchLatestHRV(from start: Date, to end: Date) async -> Double? {
