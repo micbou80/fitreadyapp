@@ -4,6 +4,7 @@ struct SettingsView: View {
 
     @EnvironmentObject private var healthKit: HealthKitManager
 
+    @AppStorage("anthropicAPIKey")       private var anthropicAPIKey: String = ""
     @AppStorage("baselineDays")          private var baselineDays: Int = 7
     @AppStorage("sleepTargetHours")      private var sleepTargetHours: Double = 7.5
     @AppStorage("hrvGoodThreshold")      private var hrvGoodThreshold: Double = 0.95
@@ -103,6 +104,28 @@ struct SettingsView: View {
                             }
                         }
                     }
+                }
+
+                // MARK: AI Scanner
+                Section {
+                    SecureField("Paste your key here", text: $anthropicAPIKey)
+                        .textContentType(.password)
+                        .autocorrectionDisabled()
+                        .textInputAutocapitalization(.never)
+                    Link(destination: URL(string: "https://console.anthropic.com/settings/keys")!) {
+                        HStack {
+                            Text("Get a free API key")
+                                .font(.subheadline)
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                        }
+                        .foregroundStyle(Color.accentColor)
+                    }
+                } header: {
+                    Text("AI Scanner")
+                } footer: {
+                    Text("Used for meal photo analysis. Your key is stored locally and never shared.")
                 }
 
                 // MARK: Reset

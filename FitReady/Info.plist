@@ -16,6 +16,10 @@
 	<string>1.0</string>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSCameraUsageDescription</key>
+	<string>FitReady uses the camera to scan your meals and estimate macros with AI.</string>
+	<key>NSPhotoLibraryUsageDescription</key>
+	<string>FitReady accesses your photos to scan meals and estimate macros with AI.</string>
 	<key>NSHealthShareUsageDescription</key>
 	<string>FitReady reads your HRV, resting heart rate, and sleep data to calculate your daily workout readiness score.</string>
 	<key>UIApplicationSceneManifest</key>

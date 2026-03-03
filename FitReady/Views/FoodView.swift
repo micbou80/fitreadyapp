@@ -26,6 +26,10 @@ struct FoodView: View {
     @AppStorage("manualCarbsG")     private var manualCarbsG: Double = 0
     @AppStorage("manualMacroDate")  private var manualMacroDate: String = ""
 
+    // ── Meal log (scanner) ────────────────────────────
+    @AppStorage("mealsJSON")        private var mealsJSON: String = "[]"
+    @AppStorage("anthropicAPIKey")  private var apiKey: String = ""
+
     // ── Setup form state ──────────────────────────────
     @State private var heightText: String = ""
     @State private var ageText: String = ""
@@ -37,6 +41,10 @@ struct FoodView: View {
     @State private var manualFatText: String = ""
     @State private var manualCarbsText: String = ""
     @FocusState private var focusedField: ManualField?
+
+    // ── Scanner state ─────────────────────────────────
+    @State private var showingScanner = false
+    @State private var showingManualEntryInline = false
 
     private enum ManualField { case kcal, protein, fat, carbs }
 
@@ -70,11 +78,23 @@ struct FoodView: View {
         return String(format: "%04d-%02d-%02d", c.year!, c.month!, c.day!)
     }
 
-    /// Returns today's intake: prefers HealthKit, falls back to manual entry.
+    private var todayMeals: [MealEntry] {
+        ((try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8))) ?? [])
+            .filter { $0.date == todayKey }
+    }
+
+    /// Returns today's intake. Priority: HealthKit → logged meals → old manual total.
     private var intake: (kcal: Double?, protein: Double?, fat: Double?, carbs: Double?) {
-        let hkHasData = healthKit.todayKcal != nil
-        if hkHasData {
+        if healthKit.todayKcal != nil {
             return (healthKit.todayKcal, healthKit.todayProteinG, healthKit.todayFatG, healthKit.todayCarbsG)
+        }
+        if !todayMeals.isEmpty {
+            return (
+                todayMeals.reduce(0) { $0 + $1.kcal },
+                todayMeals.reduce(0) { $0 + $1.proteinG },
+                todayMeals.reduce(0) { $0 + $1.fatG },
+                todayMeals.reduce(0) { $0 + $1.carbsG }
+            )
         }
         if manualMacroDate == todayKey && manualKcal > 0 {
             return (manualKcal, manualProteinG > 0 ? manualProteinG : nil,
@@ -109,7 +129,7 @@ struct FoodView: View {
                             targetSummaryCard(targets: targets)
                             progressRingsCard(targets: targets)
                             if showManualEntry {
-                                manualEntryCard
+                                mealLogCard
                             }
                             settingsCard
                         }
@@ -120,6 +140,13 @@ struct FoodView: View {
             }
             .navigationTitle("Food")
             .navigationBarTitleDisplayMode(.inline)
+            .sheet(isPresented: $showingScanner) {
+                FoodScannerSheet(
+                    apiKey: apiKey,
+                    todayKey: todayKey,
+                    onSave: { entry in saveMealEntry(entry) }
+                )
+            }
         }
     }
 
@@ -365,48 +392,136 @@ struct FoodView: View {
         .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Manual entry card
+    // MARK: - Meal log card (scanner + manual)
 
     @ViewBuilder
-    private var manualEntryCard: some View {
+    private var mealLogCard: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Label("Log Today's Intake", systemImage: "pencil")
-                .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(Color(.secondaryLabel))
 
-            Text("No nutrition data found in Apple Health. Enter your totals manually or sync from MyFitnessPal / Cronometer.")
-                .font(.caption)
-                .foregroundStyle(Color(.tertiaryLabel))
+            // Header + Scan button
+            HStack {
+                Label("Today's Meals", systemImage: "fork.knife")
+                    .font(.subheadline).fontWeight(.semibold)
+                    .foregroundStyle(Color(.secondaryLabel))
+                Spacer()
+                Button {
+                    showingScanner = true
+                } label: {
+                    Label("Scan", systemImage: "camera.fill")
+                        .font(.subheadline).fontWeight(.semibold)
+                        .padding(.horizontal, 12).padding(.vertical, 6)
+                        .background(Color.accentColor)
+                        .foregroundStyle(.white)
+                        .clipShape(Capsule())
+                }
+                .buttonStyle(.plain)
+            }
+
+            // Logged meals list
+            if todayMeals.isEmpty {
+                Text("No meals logged yet. Scan a photo or add manually.")
+                    .font(.caption)
+                    .foregroundStyle(Color(.tertiaryLabel))
+            } else {
+                VStack(spacing: 8) {
+                    ForEach(todayMeals) { meal in
+                        mealRow(meal)
+                    }
+                }
+            }
 
             Divider()
 
-            // 2×2 grid of input fields
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
-                manualField(label: "Calories (kcal)", text: $manualKcalText, field: .kcal)
-                manualField(label: "Protein (g)",     text: $manualProteinText, field: .protein)
-                manualField(label: "Fat (g)",         text: $manualFatText, field: .fat)
-                manualField(label: "Carbs (g)",       text: $manualCarbsText, field: .carbs)
+            // Add manually toggle
+            Button {
+                withAnimation(.spring(response: 0.3)) {
+                    showingManualEntryInline.toggle()
+                }
+            } label: {
+                Label(showingManualEntryInline ? "Hide manual entry" : "Add manually",
+                      systemImage: showingManualEntryInline ? "chevron.up" : "plus")
+                    .font(.subheadline)
+                    .foregroundStyle(Color(.secondaryLabel))
             }
+            .buttonStyle(.plain)
 
-            Button("Save Today's Intake") {
-                saveManualIntake()
+            if showingManualEntryInline {
+                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 12) {
+                    manualField(label: "Calories (kcal)", text: $manualKcalText, field: .kcal)
+                    manualField(label: "Protein (g)",     text: $manualProteinText, field: .protein)
+                    manualField(label: "Fat (g)",         text: $manualFatText, field: .fat)
+                    manualField(label: "Carbs (g)",       text: $manualCarbsText, field: .carbs)
+                }
+
+                Button("Log Manual Entry") {
+                    saveManualAsMealEntry()
+                }
+                .buttonStyle(.borderedProminent)
+                .tint(.purple)
+                .disabled(manualKcalText.isEmpty)
+                .frame(maxWidth: .infinity)
             }
-            .buttonStyle(.borderedProminent)
-            .tint(.purple)
-            .disabled(manualKcalText.isEmpty)
-            .frame(maxWidth: .infinity)
         }
         .padding(16)
         .background(Color(.systemBackground))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: .black.opacity(0.06), radius: 8, x: 0, y: 2)
-        .onAppear {
-            if manualMacroDate == todayKey {
-                if manualKcal     > 0 { manualKcalText     = String(Int(manualKcal))    }
-                if manualProteinG > 0 { manualProteinText  = String(Int(manualProteinG)) }
-                if manualFatG     > 0 { manualFatText      = String(Int(manualFatG))     }
-                if manualCarbsG   > 0 { manualCarbsText    = String(Int(manualCarbsG))   }
+    }
+
+    @ViewBuilder
+    private func mealRow(_ meal: MealEntry) -> some View {
+        HStack(spacing: 10) {
+            // Source icon
+            Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
+                .font(.system(size: 11))
+                .foregroundStyle(Color.accentColor)
+                .frame(width: 22, height: 22)
+                .background(Color.accentColor.opacity(0.12))
+                .clipShape(Circle())
+
+            VStack(alignment: .leading, spacing: 2) {
+                Text(meal.name)
+                    .font(.system(size: 13, weight: .semibold))
+                    .lineLimit(1)
+                Text(meal.timestamp.formatted(.dateTime.hour().minute()))
+                    .font(.caption2)
+                    .foregroundStyle(Color(.tertiaryLabel))
             }
+
+            Spacer()
+
+            // Macro chips
+            HStack(spacing: 6) {
+                mealMacroChip(value: Int(meal.kcal), unit: "kcal",
+                              color: Color(red: 0.58, green: 0.35, blue: 0.96))
+                mealMacroChip(value: Int(meal.proteinG), unit: "P",
+                              color: Color(red: 0.20, green: 0.78, blue: 0.35))
+            }
+
+            // Delete button
+            Button {
+                deleteMealEntry(id: meal.id)
+            } label: {
+                Image(systemName: "trash")
+                    .font(.system(size: 12))
+                    .foregroundStyle(Color(.tertiaryLabel))
+            }
+            .buttonStyle(.plain)
+        }
+        .padding(.horizontal, 10).padding(.vertical, 8)
+        .background(Color(.systemGroupedBackground))
+        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    @ViewBuilder
+    private func mealMacroChip(value: Int, unit: String, color: Color) -> some View {
+        HStack(spacing: 2) {
+            Text("\(value)")
+                .font(.system(size: 11, weight: .bold, design: .rounded))
+                .foregroundStyle(color)
+            Text(unit)
+                .font(.system(size: 10))
+                .foregroundStyle(Color(.tertiaryLabel))
         }
     }
 
@@ -573,5 +688,38 @@ struct FoodView: View {
         if let v = Double(manualCarbsText)   { manualCarbsG   = v }
         manualMacroDate = todayKey
         focusedField    = nil
+    }
+
+    private func saveManualAsMealEntry() {
+        let entry = MealEntry(
+            date:     todayKey,
+            name:     "Manual entry",
+            kcal:     Double(manualKcalText)    ?? 0,
+            proteinG: Double(manualProteinText) ?? 0,
+            fatG:     Double(manualFatText)     ?? 0,
+            carbsG:   Double(manualCarbsText)   ?? 0,
+            source:   "manual"
+        )
+        saveMealEntry(entry)
+        manualKcalText    = ""
+        manualProteinText = ""
+        manualFatText     = ""
+        manualCarbsText   = ""
+        focusedField      = nil
+        withAnimation { showingManualEntryInline = false }
+    }
+
+    func saveMealEntry(_ entry: MealEntry) {
+        var meals = (try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8))) ?? []
+        meals.append(entry)
+        if let data = try? JSONEncoder().encode(meals),
+           let json = String(data: data, encoding: .utf8) { mealsJSON = json }
+    }
+
+    private func deleteMealEntry(id: UUID) {
+        var meals = (try? JSONDecoder().decode([MealEntry].self, from: Data(mealsJSON.utf8))) ?? []
+        meals.removeAll { $0.id == id }
+        if let data = try? JSONEncoder().encode(meals),
+           let json = String(data: data, encoding: .utf8) { mealsJSON = json }
     }
 }
