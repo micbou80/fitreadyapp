@@ -3,7 +3,8 @@ import SwiftUI
 struct ContentView: View {
     var body: some View {
         TabView {
-            MainReadinessView()
+            // V2 Today screen — decision-first, low-friction
+            TodayView()
                 .tabItem { Label("Today",    systemImage: "house.fill") }
 
             InsightsView()
@@ -21,3 +22,6 @@ struct ContentView: View {
         .tint(.purple)
     }
 }
+
+// NOTE: MainReadinessView (V1) is preserved in MainReadinessView.swift.
+// Swap it back into the Today tab above to compare the two designs.
