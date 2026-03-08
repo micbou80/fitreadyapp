@@ -84,7 +84,7 @@ struct ReadinessRingView: View {
                 // Label
                 Text("READINESS")
                     .font(.system(size: 9, weight: .semibold))
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
                     .kerning(1.2)
 
                 Spacer().frame(height: 10)

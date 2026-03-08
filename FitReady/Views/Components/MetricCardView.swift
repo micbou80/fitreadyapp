@@ -15,7 +15,7 @@ struct MetricCardView: View {
         switch score {
         case  1: return AppColors.greenBase
         case -1: return AppColors.redBase
-        default: return Color(.tertiaryLabel)
+        default: return AppColors.textMuted
         }
     }
 
@@ -38,10 +38,10 @@ struct MetricCardView: View {
             HStack(spacing: 4) {
                 Image(systemName: icon)
                     .font(.system(size: 10))
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Text(title)
                     .font(.system(size: 11, weight: .medium))
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                     .lineLimit(1)
                     .minimumScaleFactor(0.7)
             }
@@ -50,12 +50,12 @@ struct MetricCardView: View {
             HStack(alignment: .firstTextBaseline, spacing: 2) {
                 Text(value)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(AppColors.textPrimary)
                     .minimumScaleFactor(0.6)
                     .lineLimit(1)
                 Text(unit)
                     .font(.system(size: 11))
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
 
             // Delta row

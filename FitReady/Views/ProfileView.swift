@@ -14,7 +14,10 @@ struct ProfileView: View {
     @AppStorage("useManualWeight")  private var useManualWeight:  Bool   = false
     @AppStorage("useImperial")      private var useImperial:      Bool   = false
 
-    @State private var selectedPhoto: PhotosPickerItem?
+    @AppStorage("lastCheckOutDate") private var lastCheckOutDate: String = ""
+
+    @State private var selectedPhoto:    PhotosPickerItem?
+    @State private var showingCheckOut:  Bool = false
 
     // MARK: - Derived
 
@@ -56,10 +59,15 @@ struct ProfileView: View {
                 VStack(spacing: DS.Spacing.xl) {
                     headerCard
                     menuCard
+                    devCard
                     Spacer(minLength: DS.Spacing.xl)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.md)
+            }
+            .fullScreenCover(isPresented: $showingCheckOut) {
+                EveningCheckOutView { showingCheckOut = false }
+                    .environmentObject(healthKit)
             }
         }
         .navigationTitle("Profile")
@@ -95,9 +103,9 @@ struct ProfileView: View {
                     } else {
                         Image(systemName: "person.fill")
                             .font(.system(size: 44))
-                            .foregroundStyle(Color(.tertiaryLabel))
+                            .foregroundStyle(AppColors.textMuted)
                             .frame(maxWidth: .infinity, maxHeight: .infinity)
-                            .background(Color(.quaternarySystemFill))
+                            .background(AppColors.surface)
                     }
                 }
                 .frame(width: 90, height: 90)
@@ -119,7 +127,7 @@ struct ProfileView: View {
             // Name
             Text(profileName.isEmpty ? "Tap pencil to add photo" : profileName)
                 .font(.system(size: 20, weight: .semibold, design: .rounded))
-                .foregroundStyle(profileName.isEmpty ? Color(.tertiaryLabel) : Color(.label))
+                .foregroundStyle(profileName.isEmpty ? AppColors.textMuted : AppColors.textPrimary)
 
             // Stats row
             HStack(spacing: 0) {
@@ -144,7 +152,7 @@ struct ProfileView: View {
                 .font(.system(size: 18, weight: .semibold, design: .rounded))
             Text(label)
                 .font(DS.Typography.caption())
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -179,10 +187,43 @@ struct ProfileView: View {
 
             menuRow(
                 icon: "gearshape.fill",
-                iconColor: Color(.systemGray),
+                iconColor: AppColors.textMuted,
                 title: "Settings"
             ) { SettingsView() }
         }
+        .background(DS.Background.card)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
+    }
+
+    // MARK: - Dev card
+
+    private var devCard: some View {
+        Button {
+            lastCheckOutDate = ""
+            showingCheckOut  = true
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+                Image(systemName: "arrow.counterclockwise")
+                    .font(.system(size: 13, weight: .medium))
+                    .foregroundStyle(AppColors.textMuted)
+                    .frame(width: 36, height: 36)
+                    .background(AppColors.metricInactive)
+                    .clipShape(RoundedRectangle(cornerRadius: 8))
+                VStack(alignment: .leading, spacing: 2) {
+                    Text("Preview check-out")
+                        .font(DS.Typography.body())
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text("Dev only — resets today's lock")
+                        .font(DS.Typography.caption())
+                        .foregroundStyle(AppColors.textMuted)
+                }
+                Spacer()
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .padding(.vertical, DS.Spacing.md)
+        }
+        .buttonStyle(.plain)
         .background(DS.Background.card)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
         .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
@@ -206,13 +247,13 @@ struct ProfileView: View {
 
                 Text(title)
                     .font(DS.Typography.body())
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(AppColors.textPrimary)
 
                 Spacer()
 
                 Image(systemName: "chevron.right")
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
             }
             .padding(.horizontal, DS.Spacing.lg)
             .padding(.vertical, DS.Spacing.md)

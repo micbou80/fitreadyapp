@@ -41,7 +41,7 @@ struct ReadinessDetailsSheet: View {
                                     title: "Sleep",
                                     value: vm.todaySleep.map { String(format: "%.1f hrs", $0) } ?? "—",
                                     delta: sleepDelta,
-                                    good:  (vm.todaySleep ?? 0) >= 7.0
+                                    good:  (vm.todaySleep ?? 0) >= 7.5
                                 )
                             }
                         }
@@ -50,7 +50,7 @@ struct ReadinessDetailsSheet: View {
                         if let updated = vm.lastUpdated {
                             Text("Updated \(updated.formatted(.dateTime.hour().minute()))")
                                 .font(DS.Typography.caption())
-                                .foregroundStyle(Color(.tertiaryLabel))
+                                .foregroundStyle(AppColors.textMuted)
                         }
                     }
                     .padding(DS.Spacing.lg)
@@ -84,7 +84,7 @@ struct ReadinessDetailsSheet: View {
                 if !vm.readinessReason.isEmpty {
                     Text(vm.readinessReason)
                         .font(DS.Typography.caption())
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(AppColors.textSecondary)
                 }
             }
             Spacer()
@@ -143,12 +143,12 @@ struct ReadinessDetailsSheet: View {
     // MARK: - Delta helpers
 
     private var isHRVGood: Bool {
-        guard let hrv = vm.todayHRV, let base = vm.baselineHRV, base > 0 else { return true }
+        guard let hrv = vm.todayHRV, let base = vm.baselineHRV, base > 0 else { return false }
         return hrv >= base * 0.95
     }
 
     private var isRHRGood: Bool {
-        guard let rhr = vm.todayRHR, let base = vm.baselineRHR, base > 0 else { return true }
+        guard let rhr = vm.todayRHR, let base = vm.baselineRHR, base > 0 else { return false }
         return rhr <= base * 1.03
     }
 

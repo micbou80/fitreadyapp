@@ -26,7 +26,7 @@ struct WeightCardView: View {
             HStack(alignment: .top, spacing: 8) {
                 Label("Weight", systemImage: "scalemass.fill")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 if hasStart {
                     pctBadge(pct: Int((progress * 100).rounded()))
@@ -40,7 +40,7 @@ struct WeightCardView: View {
                     .font(.system(size: 38, weight: .black, design: .rounded))
                 Text("kg")
                     .font(.title3)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
             .padding(.bottom, 4)
 
@@ -107,7 +107,7 @@ struct WeightCardView: View {
             .foregroundStyle(accentColor)
             Text("complete")
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
         }
     }
 
@@ -116,10 +116,10 @@ struct WeightCardView: View {
         VStack(alignment: alignment, spacing: 1) {
             Text(value)
                 .font(.caption).fontWeight(.semibold)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
             Text(tag)
                 .font(.system(size: 10))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
         }
     }
 }
@@ -144,7 +144,7 @@ struct JourneyTrack: View {
             ZStack(alignment: .topLeading) {
                 // Background track
                 Capsule()
-                    .fill(Color(.systemGray4))
+                    .fill(AppColors.border)
                     .frame(width: w, height: trackH)
                     .offset(y: vCenter)
 

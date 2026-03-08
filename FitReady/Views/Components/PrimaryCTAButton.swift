@@ -11,9 +11,17 @@ struct PrimaryCTAButton: View {
 
     private var buttonColor: Color {
         switch state {
-        case .green:  return AppColors.greenText
-        case .yellow: return AppColors.amberText
-        case .red:    return AppColors.accent   // purple = calm / recovery
+        case .green:  return AppColors.brandPrimary
+        case .yellow: return AppColors.warning
+        case .red:    return AppColors.danger
+        }
+    }
+
+    private var labelColor: Color {
+        // Lime and amber are light — use dark text. Danger red is dark — use light text.
+        switch state {
+        case .green, .yellow: return AppColors.textOnBrand
+        case .red:            return AppColors.textPrimary
         }
     }
 
@@ -28,7 +36,7 @@ struct PrimaryCTAButton: View {
         } label: {
             Text(label)
                 .font(DS.Typography.body().weight(.semibold))
-                .foregroundStyle(.white)
+                .foregroundStyle(labelColor)
                 .frame(maxWidth: .infinity)
                 .padding(.vertical, DS.Spacing.md)
                 .background(buttonColor)

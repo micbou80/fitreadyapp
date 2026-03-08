@@ -59,6 +59,14 @@ struct FoodView: View {
         heightCm > 0 && ageYears > 0 && !biologicalSex.isEmpty
     }
 
+    /// Live TDEE = BMR + Apple Watch active kcal for today, when available.
+    private var liveTDEE: Double? {
+        guard isSetupComplete, let w = currentWeight, let neat = healthKit.todayActiveKcal else { return nil }
+        let bmr = MacroEngine.bmr(weightKg: w, heightCm: heightCm, ageYears: ageYears,
+                                  isMale: biologicalSex == "male")
+        return bmr + neat
+    }
+
     private var macroTargets: MacroTargets? {
         guard isSetupComplete, let w = currentWeight else { return nil }
         return MacroEngine.compute(
@@ -69,7 +77,8 @@ struct FoodView: View {
             activityLevel:     activityLevel,
             paceKgPerWeek:     weightLossPace,
             proteinPerKg:      proteinPerKg,
-            fatFloorPct:       fatFloorPct
+            fatFloorPct:       fatFloorPct,
+            tdeeOverride:      liveTDEE
         )
     }
 
@@ -160,7 +169,7 @@ struct FoodView: View {
                     .font(.headline)
                 Text("Enter a few details so FitReady can calculate your ideal daily calories, protein, fat and carbs.")
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
 
             Divider()
@@ -172,7 +181,7 @@ struct FoodView: View {
                     TextField("e.g. 178", text: $heightText)
                         .keyboardType(.numberPad)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
-                    Text("cm").font(.title3).foregroundStyle(Color(.secondaryLabel))
+                    Text("cm").font(.title3).foregroundStyle(AppColors.textSecondary)
                 }
             }
 
@@ -183,7 +192,7 @@ struct FoodView: View {
                     TextField("e.g. 32", text: $ageText)
                         .keyboardType(.numberPad)
                         .font(.system(size: 28, weight: .bold, design: .rounded))
-                    Text("years").font(.title3).foregroundStyle(Color(.secondaryLabel))
+                    Text("years").font(.title3).foregroundStyle(AppColors.textSecondary)
                 }
             }
 
@@ -260,23 +269,23 @@ struct FoodView: View {
             HStack(alignment: .firstTextBaseline) {
                 Label("Daily Targets", systemImage: "target")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 Text("\(targets.kcal)")
                     .font(.system(size: 28, weight: .black, design: .rounded))
                     .foregroundStyle(AppColors.dataCalories)
                 + Text(" kcal")
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
 
             HStack(spacing: 0) {
                 macroChip(value: "\(targets.proteinG)g", label: "protein",
                           color: AppColors.dataProtein)
-                Text(" · ").foregroundStyle(Color(.tertiaryLabel))
+                Text(" · ").foregroundStyle(AppColors.textMuted)
                 macroChip(value: "\(targets.fatG)g", label: "fat",
                           color: AppColors.dataFat)
-                Text(" · ").foregroundStyle(Color(.tertiaryLabel))
+                Text(" · ").foregroundStyle(AppColors.textMuted)
                 macroChip(value: "\(targets.carbsG)g", label: "carbs",
                           color: AppColors.dataCarbs)
             }
@@ -285,12 +294,14 @@ struct FoodView: View {
             Divider()
 
             HStack(spacing: 4) {
-                Image(systemName: "info.circle")
+                Image(systemName: liveTDEE != nil ? "bolt.fill" : "info.circle")
                     .font(.caption)
-                Text("\(MacroEngine.levelLabel(for: activityLevel)) · \(paceLabel(weightLossPace))")
+                Text(liveTDEE != nil
+                     ? "Live activity · \(paceLabel(weightLossPace))"
+                     : "\(MacroEngine.levelLabel(for: activityLevel)) · \(paceLabel(weightLossPace))")
                     .font(.caption)
             }
-            .foregroundStyle(Color(.tertiaryLabel))
+            .foregroundStyle(liveTDEE != nil ? AppColors.accent.opacity(0.7) : AppColors.textMuted)
         }
         .padding(16)
         .background(AppColors.card)
@@ -313,7 +324,7 @@ struct FoodView: View {
         VStack(alignment: .leading, spacing: 14) {
             Label("Today's Intake", systemImage: "chart.pie.fill")
                 .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
 
             LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
                 ForEach(data.indices, id: \.self) { idx in
@@ -368,14 +379,14 @@ struct FoodView: View {
                     if let a = actual {
                         Text(unit == "kcal" ? "\(Int(a.rounded()))" : String(format: "%.0f", a))
                             .font(.system(size: 15, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(.label))
+                            .foregroundStyle(AppColors.textPrimary)
                         Text("\(pct)%")
                             .font(.system(size: 9, weight: .semibold))
                             .foregroundStyle(color)
                     } else {
                         Text("—")
                             .font(.system(size: 18, weight: .black, design: .rounded))
-                            .foregroundStyle(Color(.tertiaryLabel))
+                            .foregroundStyle(AppColors.textMuted)
                     }
                 }
             }
@@ -386,7 +397,7 @@ struct FoodView: View {
                     .font(.subheadline).fontWeight(.semibold)
                 Text("/ \(target) \(unit)")
                     .font(.caption)
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
             }
         }
         .frame(maxWidth: .infinity)
@@ -402,7 +413,7 @@ struct FoodView: View {
             HStack {
                 Label("Today's Meals", systemImage: "fork.knife")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 Button {
                     showingScanner = true
@@ -410,8 +421,8 @@ struct FoodView: View {
                     Label("Scan", systemImage: "camera.fill")
                         .font(.subheadline).fontWeight(.semibold)
                         .padding(.horizontal, 12).padding(.vertical, 6)
-                        .background(AppColors.accent)
-                        .foregroundStyle(.white)
+                        .background(AppColors.brandPrimary)
+                        .foregroundStyle(AppColors.textOnBrand)
                         .clipShape(Capsule())
                 }
                 .buttonStyle(.plain)
@@ -421,7 +432,7 @@ struct FoodView: View {
             if todayMeals.isEmpty {
                 Text("No meals logged yet. Scan a photo or add manually.")
                     .font(.caption)
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
             } else {
                 VStack(spacing: 8) {
                     ForEach(todayMeals) { meal in
@@ -441,7 +452,7 @@ struct FoodView: View {
                 Label(showingManualEntryInline ? "Hide manual entry" : "Add manually",
                       systemImage: showingManualEntryInline ? "chevron.up" : "plus")
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
             .buttonStyle(.plain)
 
@@ -485,7 +496,7 @@ struct FoodView: View {
                     .lineLimit(1)
                 Text(meal.timestamp.formatted(.dateTime.hour().minute()))
                     .font(.caption2)
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
             }
 
             Spacer()
@@ -504,7 +515,7 @@ struct FoodView: View {
             } label: {
                 Image(systemName: "trash")
                     .font(.system(size: 12))
-                    .foregroundStyle(Color(.tertiaryLabel))
+                    .foregroundStyle(AppColors.textMuted)
             }
             .buttonStyle(.plain)
         }
@@ -521,7 +532,7 @@ struct FoodView: View {
                 .foregroundStyle(color)
             Text(unit)
                 .font(.system(size: 10))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
         }
     }
 
@@ -530,7 +541,7 @@ struct FoodView: View {
         VStack(alignment: .leading, spacing: 4) {
             Text(label)
                 .font(.caption)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
             TextField("0", text: text)
                 .keyboardType(.numberPad)
                 .focused($focusedField, equals: field)
@@ -549,7 +560,7 @@ struct FoodView: View {
             HStack {
                 Label("Macro Settings", systemImage: "slider.horizontal.3")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 Button(showingSettings ? "Done" : "Edit") {
                     withAnimation(.spring(response: 0.35)) { showingSettings.toggle() }
@@ -655,7 +666,7 @@ struct FoodView: View {
     @ViewBuilder
     private func macroChip(value: String, label: String, color: Color) -> some View {
         (Text(value).fontWeight(.bold).foregroundStyle(color)
-            + Text(" \(label)").foregroundStyle(Color(.secondaryLabel)))
+            + Text(" \(label)").foregroundStyle(AppColors.textSecondary))
     }
 
     @ViewBuilder
@@ -664,7 +675,7 @@ struct FoodView: View {
             Image(systemName: icon).font(.system(size: 10))
             Text(label).font(.caption).lineLimit(1).minimumScaleFactor(0.7)
         }
-        .foregroundStyle(Color(.secondaryLabel))
+        .foregroundStyle(AppColors.textSecondary)
         .padding(.horizontal, 8).padding(.vertical, 4)
         .background(AppColors.background)
         .clipShape(Capsule())

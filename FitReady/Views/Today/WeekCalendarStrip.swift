@@ -1,4 +1,5 @@
 import SwiftUI
+import UIKit
 
 /// Calendar header: "Today" title + profile avatar, then the full Mon→Sun week strip.
 ///
@@ -9,9 +10,8 @@ struct WeekCalendarStrip: View {
 
     @ObservedObject var vm: TodayViewModel
 
-    @AppStorage("profilePhotoData") private var profilePhotoData: Data = Data()
     /// Comma-separated plan letters for Mon–Sun, e.g. "W,L,W,L,W,R,R"
-    @AppStorage("weeklyPlan")       private var weeklyPlan: String = "W,L,W,L,W,R,R"
+    @AppStorage("weeklyPlan") private var weeklyPlan: String = "W,L,W,L,W,R,R"
 
     // MARK: - Day model
 
@@ -67,7 +67,7 @@ struct WeekCalendarStrip: View {
         switch letter {
         case "W": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : AppColors.greenText
         case "L": base = isToday ? DS.StateColor.primary(for: vm.readinessState) : AppColors.amberText
-        default:  base = Color(.systemGray3)
+        default:  base = AppColors.textMuted
         }
         return isPast && !isToday ? base.opacity(0.35) : base
     }
@@ -77,21 +77,11 @@ struct WeekCalendarStrip: View {
     var body: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
-            // — Header: "Today" title + profile avatar —
-            HStack(alignment: .center) {
-                VStack(alignment: .leading, spacing: 2) {
-                    Text("Today")
-                        .font(.system(size: 26, weight: .bold, design: .rounded))
-                    Text(Date().formatted(.dateTime.month(.wide).year()))
-                        .font(DS.Typography.caption())
-                        .foregroundStyle(Color(.secondaryLabel))
-                }
-                Spacer()
-                NavigationLink(destination: ProfileView()) {
-                    profileAvatar
-                }
-                .buttonStyle(.plain)
-            }
+            // — Section label —
+            Text("THIS WEEK")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppColors.textSecondary)
+                .kerning(0.5)
 
             // — Day strip —
             HStack(spacing: 0) {
@@ -108,28 +98,20 @@ struct WeekCalendarStrip: View {
         .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
-    // MARK: - Profile avatar
-
-    @ViewBuilder
-    private var profileAvatar: some View {
-        if !profilePhotoData.isEmpty, let img = UIImage(data: profilePhotoData) {
-            Image(uiImage: img)
-                .resizable()
-                .scaledToFill()
-                .frame(width: 42, height: 42)
-                .clipShape(Circle())
-        } else {
-            Image(systemName: "person.crop.circle.fill")
-                .resizable()
-                .foregroundStyle(Color(.systemGray3))
-                .frame(width: 42, height: 42)
-        }
-    }
-
     // MARK: - Day cell
 
     @ViewBuilder
     private func dayCellView(_ day: WeekDay) -> some View {
+        if !day.isPast && !day.isToday {
+            Button { cycleDay(day.id) } label: { cellContent(day) }
+                .buttonStyle(.plain)
+        } else {
+            cellContent(day)
+        }
+    }
+
+    @ViewBuilder
+    private func cellContent(_ day: WeekDay) -> some View {
         let letter = day.isToday ? todayBadgeLetter : day.planLetter
         let color  = planColor(for: letter, isToday: day.isToday, isPast: day.isPast)
 
@@ -137,7 +119,7 @@ struct WeekCalendarStrip: View {
             // Day initial
             Text(day.initial)
                 .font(.system(size: 11, weight: .medium))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
 
             if day.isToday {
                 // Large filled capsule: plan letter on top, date number below
@@ -148,10 +130,10 @@ struct WeekCalendarStrip: View {
                     VStack(spacing: 0) {
                         Text(letter)
                             .font(.system(size: 12, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textOnBrand)
                         Text("\(day.dayNumber)")
                             .font(.system(size: 17, weight: .bold, design: .rounded))
-                            .foregroundStyle(.white)
+                            .foregroundStyle(AppColors.textOnBrand)
                     }
                 }
             } else {
@@ -160,17 +142,29 @@ struct WeekCalendarStrip: View {
                     Text("\(day.dayNumber)")
                         .font(.system(size: 15, weight: .medium, design: .rounded))
                         .foregroundStyle(
-                            day.isPast ? Color(.label).opacity(0.25) : Color(.label).opacity(0.7)
+                            day.isPast ? AppColors.textPrimary.opacity(0.25) : AppColors.textPrimary.opacity(0.7)
                         )
                         .frame(width: 34, height: 28)
                     Text(letter)
                         .font(.system(size: 9, weight: .bold, design: .rounded))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(color)
                         .frame(width: 18, height: 13)
-                        .background(color)
+                        .background(color.opacity(0.2))
                         .clipShape(Capsule())
+                        .animation(.spring(response: 0.25, dampingFraction: 0.7), value: letter)
                 }
             }
         }
+    }
+
+    private func cycleDay(_ index: Int) {
+        var letters = planLetters
+        switch letters[index] {
+        case "W": letters[index] = "L"
+        case "L": letters[index] = "R"
+        default:  letters[index] = "W"
+        }
+        weeklyPlan = letters.joined(separator: ",")
+        UIImpactFeedbackGenerator(style: .light).impactOccurred()
     }
 }

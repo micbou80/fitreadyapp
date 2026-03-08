@@ -13,6 +13,12 @@ struct ReinforcementSection: View {
         SoftCard {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
+                // Section label
+                Text("MOMENTUM")
+                    .font(.system(size: 11, weight: .semibold))
+                    .foregroundStyle(AppColors.textSecondary)
+                    .kerning(0.5)
+
                 // Momentum row
                 HStack(spacing: DS.Spacing.md) {
                     MiniRing(progress: progress, color: AppColors.accent)
@@ -23,7 +29,7 @@ struct ReinforcementSection: View {
                             .font(DS.Typography.body())
                         Text("Keep it going")
                             .font(DS.Typography.caption())
-                            .foregroundStyle(Color(.secondaryLabel))
+                            .foregroundStyle(AppColors.textSecondary)
                     }
                 }
 
@@ -36,7 +42,7 @@ struct ReinforcementSection: View {
                             .foregroundStyle(AppColors.amberBase)
                         Text(win)
                             .font(DS.Typography.caption())
-                            .foregroundStyle(Color(.secondaryLabel))
+                            .foregroundStyle(AppColors.textSecondary)
                     }
                 }
             }

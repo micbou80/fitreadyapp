@@ -21,17 +21,23 @@ enum DS {
         static let button: CGFloat = 14
     }
 
-    // MARK: Shadow
+    // MARK: Shadow (zeroed — dark UI uses borders instead)
     enum Shadow {
-        static let color  = AppColors.shadowColor
-        static let radius: CGFloat = 12
-        static let y:      CGFloat =  6
+        static let color:  Color   = .clear
+        static let radius: CGFloat = 0
+        static let y:      CGFloat = 0
+    }
+
+    // MARK: Border
+    enum Border {
+        static var color: Color { AppColors.border }
     }
 
     // MARK: Background (delegates to AppColors)
     enum Background {
-        static var page: Color { AppColors.background }
-        static var card: Color { AppColors.card }
+        static var page:    Color { AppColors.bg }
+        static var card:    Color { AppColors.raised }
+        static var surface: Color { AppColors.surface }
     }
 
     // MARK: State colours (delegates to AppColors)

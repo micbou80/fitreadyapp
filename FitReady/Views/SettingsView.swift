@@ -30,7 +30,7 @@ struct SettingsView: View {
                             Text("Target")
                             Spacer()
                             Text(String(format: "%.1f hrs", sleepTargetHours))
-                                .foregroundStyle(Color(.secondaryLabel))
+                                .foregroundStyle(AppColors.textSecondary)
                                 .monospacedDigit()
                         }
                         Slider(value: $sleepTargetHours, in: 6.0...10.0, step: 0.5)
@@ -155,7 +155,7 @@ struct SettingsView: View {
                 Spacer()
                 Text(description)
                     .font(.caption)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                     .monospacedDigit()
             }
             Slider(value: value, in: range, step: 0.01).tint(color)

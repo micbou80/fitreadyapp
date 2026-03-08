@@ -153,17 +153,17 @@ struct GoalsView: View {
                                     .clipShape(RoundedRectangle(cornerRadius: 6))
                                 Text("Target date")
                                     .font(DS.Typography.body())
-                                    .foregroundStyle(Color(.label))
+                                    .foregroundStyle(AppColors.textPrimary)
                                 Spacer()
                                 Text(targetDateLabel)
                                     .font(DS.Typography.body())
                                     .foregroundStyle(
                                         (targetDateChosen || goalTargetDateTS > 0)
-                                            ? Color(.label) : Color(.tertiaryLabel)
+                                            ? AppColors.textPrimary : AppColors.textMuted
                                     )
                                 Image(systemName: showTargetDatePicker ? "chevron.up" : "chevron.down")
                                     .font(.system(size: 13, weight: .semibold))
-                                    .foregroundStyle(Color(.tertiaryLabel))
+                                    .foregroundStyle(AppColors.textMuted)
                             }
                             .padding(.horizontal, DS.Spacing.lg)
                             .padding(.vertical, DS.Spacing.md)
@@ -212,21 +212,21 @@ struct GoalsView: View {
                                 HStack {
                                     Text("Relaxed")
                                         .font(.caption)
-                                        .foregroundStyle(Color(.tertiaryLabel))
+                                        .foregroundStyle(AppColors.textMuted)
                                     Spacer()
                                     Text("Aggressive")
                                         .font(.caption)
-                                        .foregroundStyle(Color(.tertiaryLabel))
+                                        .foregroundStyle(AppColors.textMuted)
                                 }
                                 .padding(.horizontal, DS.Spacing.lg)
 
                                 VStack(alignment: .leading, spacing: 2) {
                                     Text(currentPaceLabel)
                                         .font(.system(size: 15, weight: .semibold))
-                                        .foregroundStyle(Color(.label))
+                                        .foregroundStyle(AppColors.textPrimary)
                                     Text(currentPaceDesc)
                                         .font(DS.Typography.caption())
-                                        .foregroundStyle(Color(.secondaryLabel))
+                                        .foregroundStyle(AppColors.textSecondary)
                                         .fixedSize(horizontal: false, vertical: true)
                                 }
                                 .frame(maxWidth: .infinity, alignment: .leading)
@@ -237,7 +237,7 @@ struct GoalsView: View {
 
                             Text("A more aggressive pace may reduce muscle retention.")
                                 .font(DS.Typography.caption())
-                                .foregroundStyle(Color(.secondaryLabel))
+                                .foregroundStyle(AppColors.textSecondary)
                                 .frame(maxWidth: .infinity, alignment: .leading)
                                 .padding(.horizontal, DS.Spacing.lg)
                                 .padding(.bottom, DS.Spacing.md)
@@ -251,7 +251,7 @@ struct GoalsView: View {
                                 .foregroundStyle(AppColors.amberText)
                             Text("Add your weight, height, and age in Personal first.")
                                 .font(DS.Typography.caption())
-                                .foregroundStyle(Color(.secondaryLabel))
+                                .foregroundStyle(AppColors.textSecondary)
                         }
                         .padding(DS.Spacing.md)
                         .frame(maxWidth: .infinity, alignment: .leading)
@@ -266,10 +266,10 @@ struct GoalsView: View {
                             Text("Personalize My Plan")
                         }
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textOnBrand)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, DS.Spacing.md)
-                        .background(AppColors.accent)
+                        .background(AppColors.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
                     }
 
@@ -332,7 +332,7 @@ struct GoalsView: View {
                     .clipShape(RoundedRectangle(cornerRadius: 8))
                 Text(goal.label)
                     .font(DS.Typography.body())
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(AppColors.textPrimary)
                 Spacer()
                 if primaryGoal == goal.key {
                     Image(systemName: "checkmark.circle.fill")
@@ -518,7 +518,7 @@ struct GoalsView: View {
     private func sectionLabel(_ text: String) -> some View {
         Text(text.uppercased())
             .font(.system(size: 11, weight: .semibold))
-            .foregroundStyle(Color(.secondaryLabel))
+            .foregroundStyle(AppColors.textSecondary)
             .kerning(0.5)
             .frame(maxWidth: .infinity, alignment: .leading)
             .padding(.horizontal, DS.Spacing.lg)
@@ -544,7 +544,7 @@ struct GoalsView: View {
                 .font(DS.Typography.body())
             Spacer()
             trailing()
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
         }
         .padding(.horizontal, DS.Spacing.lg)
         .padding(.vertical, DS.Spacing.md)
@@ -643,10 +643,10 @@ private struct PlanSplashView: View {
                             Image(systemName: "arrow.right")
                         }
                         .font(.system(size: 16, weight: .semibold))
-                        .foregroundStyle(.white)
+                        .foregroundStyle(AppColors.textOnBrand)
                         .frame(maxWidth: .infinity)
                         .padding(.vertical, 14)
-                        .background(AppColors.accent)
+                        .background(AppColors.brandPrimary)
                         .clipShape(RoundedRectangle(cornerRadius: 14))
                     }
                 }
@@ -666,19 +666,19 @@ private struct PlanSplashView: View {
             Text("YOUR PLAN IS READY")
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(1)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
 
             Group {
                 if isLoadingCoaching {
                     RoundedRectangle(cornerRadius: 8)
-                        .fill(Color(.systemGray5))
+                        .fill(AppColors.metricInactive)
                         .frame(height: 28, alignment: .center)
                         .padding(.horizontal, 40)
                 } else {
                     Text(coaching?.headline ?? "Your plan is ready.")
                         .font(.system(size: 22, weight: .bold, design: .rounded))
                         .multilineTextAlignment(.center)
-                        .foregroundStyle(Color(.label))
+                        .foregroundStyle(AppColors.textPrimary)
                 }
             }
         }
@@ -690,7 +690,7 @@ private struct PlanSplashView: View {
             Text("DAILY TARGETS")
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
 
             HStack(spacing: 0) {
                 macroCell(value: "\(targets.kcal)",      label: "kcal",    color: AppColors.dataCalories)
@@ -713,7 +713,7 @@ private struct PlanSplashView: View {
             Text("THE JOURNEY")
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
 
             if let weeks = weeksToGoal, weeks > 0 {
                 journeyRow(icon: "calendar",
@@ -749,11 +749,11 @@ private struct PlanSplashView: View {
             HStack {
                 Text("Assessment")
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 Text(realismLabel)
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(.white)
+                    .foregroundStyle(AppColors.textOnBrand)
                     .padding(.horizontal, 12)
                     .padding(.vertical, 5)
                     .background(realismColor)
@@ -775,7 +775,7 @@ private struct PlanSplashView: View {
 
             Text(thinkingPhrases[thinkingPhase % thinkingPhrases.count])
                 .font(.subheadline)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
                 .id(thinkingPhase)
                 .transition(.opacity.combined(with: .move(edge: .bottom)))
                 .animation(.easeInOut(duration: 0.35), value: thinkingPhase)
@@ -800,7 +800,7 @@ private struct PlanSplashView: View {
             Text("HOW TO WIN")
                 .font(.system(size: 11, weight: .semibold))
                 .kerning(0.5)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
 
             ForEach(Array(tips.enumerated()), id: \.offset) { _, tip in
                 HStack(alignment: .top, spacing: 10) {
@@ -810,7 +810,7 @@ private struct PlanSplashView: View {
                         .padding(.top, 2)
                     Text(tip)
                         .font(.subheadline)
-                        .foregroundStyle(Color(.label))
+                        .foregroundStyle(AppColors.textPrimary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
             }
@@ -830,7 +830,7 @@ private struct PlanSplashView: View {
                 .foregroundStyle(color)
             Text(label)
                 .font(.caption)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
         }
         .frame(maxWidth: .infinity)
     }
@@ -845,7 +845,7 @@ private struct PlanSplashView: View {
                 .clipShape(RoundedRectangle(cornerRadius: 6))
             Text(text)
                 .font(.subheadline)
-                .foregroundStyle(Color(.label))
+                .foregroundStyle(AppColors.textPrimary)
         }
     }
 }

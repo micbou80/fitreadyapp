@@ -2,117 +2,119 @@ import SwiftUI
 
 // MARK: - AppColors — single source of truth for every color in the app.
 //
+// Dark-only token system. No adaptive UIColor wrappers.
+//
 // Usage:
-//   .foregroundStyle(AppColors.greenText)
-//   .background(AppColors.background)
-//   AppColors.stateBase(for: readinessState)
+//   .foregroundStyle(AppColors.textPrimary)
+//   .background(AppColors.raised)
+//   AppColors.stateText(for: readinessState)
 
 enum AppColors {
 
-    // MARK: Adaptive base (light / dark mode)
+    // MARK: Brand
 
-    /// Page / screen background  — #F7F8FA light / #0B1220 dark
-    static let background = Color(uiColor: UIColor { tc in
-        tc.userInterfaceStyle == .dark
-            ? UIColor(red: 0.043, green: 0.071, blue: 0.125, alpha: 1)   // #0B1220
-            : UIColor(red: 0.969, green: 0.973, blue: 0.980, alpha: 1)   // #F7F8FA
-    })
+    /// Lime green — primary brand / CTA background / active state
+    static let brandPrimary = Color(hex: "C8F135")
+    /// Darker lime — secondary brand variant
+    static let brandDark    = Color(hex: "9BBF1A")
+    /// Muted brand tint — chip / badge backgrounds on dark surfaces
+    static let brandMuted   = Color(hex: "3D4A1A")
 
-    /// Card / surface background  — #FFFFFF light / #111827 dark
-    static let card = Color(uiColor: UIColor { tc in
-        tc.userInterfaceStyle == .dark
-            ? UIColor(red: 0.067, green: 0.094, blue: 0.153, alpha: 1)   // #111827
-            : .white
-    })
+    // MARK: Base surfaces
 
-    // MARK: Text & chrome
+    /// Page / screen background
+    static let bg      = Color(hex: "0D0F0B")
+    /// Slightly raised surface (list rows, inner panels)
+    static let surface = Color(hex: "1A1D16")
+    /// Card / elevated surface
+    static let raised  = Color(hex: "222619")
+    /// Dividers, borders, ring tracks
+    static let border  = Color(hex: "3A4030")
 
-    static let textPrimary   = Color(.label)
-    static let textSecondary = Color(.secondaryLabel)
-    static let divider       = Color(.separator)
-    static let shadowColor   = Color.black.opacity(0.06)
+    // MARK: Text
 
-    // MARK: Accent
+    static let textPrimary   = Color(hex: "F0F5E8")
+    static let textSecondary = Color(hex: "9AA88C")
+    static let textMuted     = Color(hex: "5C6652")
+    /// Use on brandPrimary backgrounds (CTA buttons)
+    static let textOnBrand   = Color(hex: "0D0F0B")
 
-    /// Brand purple — #7C3AED
-    static let accent     = Color(hex: "7C3AED")
-    /// Soft purple tint — #F3E8FF
-    static let accentSoft = Color(hex: "F3E8FF")
+    // MARK: Semantic
 
-    // MARK: State — green (ready / workout)
+    /// Amber — calories, alerts, caution
+    static let warning = Color(hex: "F5A623")
+    /// Red — danger, rest state
+    static let danger  = Color(hex: "E8453C")
+    /// Blue — sleep, info
+    static let info    = Color(hex: "4DA6FF")
 
-    /// Bright fill for rings, progress bars — #22C55E
-    static let greenBase = Color(hex: "22C55E")
-    /// Soft tint background — #E8F7EE
-    static let greenSoft = Color(hex: "E8F7EE")
-    /// Dark readable text / icon / button fill on white — #166534
-    static let greenText = Color(hex: "166534")
+    // MARK: Metric
 
-    // MARK: State — amber (light / caution)
+    /// Active ring / progress fill (= brandPrimary)
+    static let metricActive   = Color(hex: "C8F135")
+    /// Inactive ring track
+    static let metricInactive = Color(hex: "323D28")
 
-    /// Bright fill for rings, progress bars — #F59E0B
-    static let amberBase = Color(hex: "F59E0B")
-    /// Soft tint background — #FFF4E5
-    static let amberSoft = Color(hex: "FFF4E5")
-    /// Dark readable text / icon / button fill on white — #92400E
-    static let amberText = Color(hex: "92400E")
+    // MARK: - Backward-compatible aliases used throughout the codebase
 
-    // MARK: State — red (rest / warning)
+    // These map old names to new tokens so callers outside AppColors
+    // can be migrated file-by-file without breakage.
 
-    /// Bright fill for rings, progress bars — #EF4444
-    static let redBase = Color(hex: "EF4444")
-    /// Soft tint background — #FDECEC
-    static let redSoft = Color(hex: "FDECEC")
-    /// Dark readable text / icon / button fill on white — #7F1D1D
-    static let redText = Color(hex: "7F1D1D")
+    static let accent      = brandPrimary
+    static let accentSoft  = brandMuted
+    static let background  = bg
+    static let card        = raised
+    static let shadowColor = Color.clear
 
-    // MARK: Nutrition / data chart colors
+    static let greenBase = metricActive
+    static let greenSoft = brandMuted
+    static let greenText = brandPrimary
 
-    /// Protein — #22C55E  (green)
-    static let dataProtein   = Color(hex: "22C55E")
-    /// Carbohydrates — #3B82F6  (blue)
-    static let dataCarbs     = Color(hex: "3B82F6")
-    /// Fat — #F59E0B  (amber)
-    static let dataFat       = Color(hex: "F59E0B")
-    /// Calories / energy — #8B5CF6  (violet)
-    static let dataCalories  = Color(hex: "8B5CF6")
+    static let amberBase = warning
+    static let amberSoft = warning.opacity(0.15)
+    static let amberText = warning
 
-    // MARK: Misc data colors
+    static let redBase = danger
+    static let redSoft = danger.opacity(0.15)
+    static let redText = danger
 
-    /// Sleep / HRV trend line — #6282FA  (periwinkle-blue)
-    static let dataSleep     = Color(hex: "6282FA")
+    static let dataProtein  = brandPrimary
+    static let dataCarbs    = info
+    static let dataFat      = danger
+    static let dataCalories = warning
+    static let dataSleep    = info
 
     // MARK: - State helpers
 
-    /// Bright base color for ring fills, chart marks.
+    /// Bright fill for ring / progress bar.
     static func stateBase(for state: ReadinessState) -> Color {
         switch state {
-        case .green:  return greenBase
-        case .yellow: return amberBase
-        case .red:    return redBase
+        case .green:  return brandPrimary
+        case .yellow: return warning
+        case .red:    return danger
         }
     }
 
-    /// Soft tint for card / chip backgrounds.
+    /// Muted tint for card / chip backgrounds.
     static func stateSoft(for state: ReadinessState) -> Color {
         switch state {
-        case .green:  return greenSoft
-        case .yellow: return amberSoft
-        case .red:    return redSoft
+        case .green:  return brandMuted
+        case .yellow: return warning.opacity(0.15)
+        case .red:    return danger.opacity(0.15)
         }
     }
 
-    /// Dark foreground color for text / icons / filled buttons on white surfaces.
+    /// Foreground colour for text / icons / filled buttons on dark surfaces.
     static func stateText(for state: ReadinessState) -> Color {
         switch state {
-        case .green:  return greenText
-        case .yellow: return amberText
-        case .red:    return redText
+        case .green:  return brandPrimary
+        case .yellow: return warning
+        case .red:    return danger
         }
     }
 }
 
-// MARK: - Hex colour helper (moved here from DesignTokens.swift)
+// MARK: - Hex colour helper
 
 extension Color {
     init(hex: String) {

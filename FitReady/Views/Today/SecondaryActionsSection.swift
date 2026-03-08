@@ -50,14 +50,14 @@ struct SecondaryActionsSection: View {
             VStack(spacing: DS.Spacing.sm) {
                 Image(systemName: action.icon)
                     .font(.system(size: 22))
-                    .foregroundStyle(AppColors.accent)
+                    .foregroundStyle(AppColors.textSecondary)
                     .frame(width: 46, height: 46)
-                    .background(AppColors.accent.opacity(0.10))
+                    .background(AppColors.surface)
                     .clipShape(RoundedRectangle(cornerRadius: 12))
 
                 Text(action.label)
                     .font(DS.Typography.caption())
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(AppColors.textPrimary)
                     .multilineTextAlignment(.center)
                     .lineLimit(2)
                     .minimumScaleFactor(0.8)

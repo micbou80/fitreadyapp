@@ -20,12 +20,12 @@ struct MacroSummaryCard: View {
             HStack {
                 Label("Today's Macros", systemImage: "fork.knife")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 if !hasAnyActual {
                     Text("No data yet")
                         .font(.caption)
-                        .foregroundStyle(Color(.tertiaryLabel))
+                        .foregroundStyle(AppColors.textMuted)
                 }
             }
 
@@ -81,14 +81,14 @@ struct MacroSummaryCard: View {
             // Actual value (large) or em dash
             Text(actual.map { format($0) } ?? "—")
                 .font(.system(size: 18, weight: .black, design: .rounded))
-                .foregroundStyle(actual != nil ? Color(.label) : Color(.tertiaryLabel))
+                .foregroundStyle(actual != nil ? AppColors.textPrimary : AppColors.textMuted)
                 .lineLimit(1)
                 .minimumScaleFactor(0.6)
 
             // Label
             Text(label)
                 .font(.system(size: 10, weight: .semibold))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
                 .textCase(.uppercase)
                 .kerning(0.3)
 
@@ -96,7 +96,7 @@ struct MacroSummaryCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(Color(.systemGray4))
+                        .fill(AppColors.border)
                         .frame(height: 5)
                     Capsule()
                         .fill(color)
@@ -109,7 +109,7 @@ struct MacroSummaryCard: View {
             // Target
             Text("/ \(format(target))")
                 .font(.system(size: 10))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
         }
         .frame(maxWidth: .infinity, alignment: .leading)
     }

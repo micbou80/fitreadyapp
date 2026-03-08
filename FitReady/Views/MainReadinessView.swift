@@ -173,14 +173,14 @@ struct MainReadinessView: View {
 
                     Text(score.verdict.subtitle)
                         .font(.subheadline)
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(AppColors.textSecondary)
                         .multilineTextAlignment(.center)
 
                     let reason = reasonText(for: score)
                     if !reason.isEmpty {
                         Text(reason)
                             .font(.footnote)
-                            .foregroundStyle(Color(.tertiaryLabel))
+                            .foregroundStyle(AppColors.textMuted)
                             .multilineTextAlignment(.center)
                             .padding(.horizontal, 32)
                             .padding(.top, 2)
@@ -189,7 +189,7 @@ struct MainReadinessView: View {
                     if let t = healthKit.lastLoadedAt {
                         Text("Updated \(t.formatted(.dateTime.hour().minute()))")
                             .font(.caption2)
-                            .foregroundStyle(Color(.tertiaryLabel))
+                            .foregroundStyle(AppColors.textMuted)
                             .padding(.top, 4)
                     }
                 }
@@ -255,10 +255,10 @@ struct MainReadinessView: View {
             VStack(alignment: .leading, spacing: 2) {
                 Text(value)
                     .font(.system(size: 20, weight: .bold, design: .rounded))
-                    .foregroundStyle(Color(.label))
+                    .foregroundStyle(AppColors.textPrimary)
                 Text(label)
                     .font(.caption)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
             }
             Spacer()
         }
@@ -277,7 +277,7 @@ struct MainReadinessView: View {
             HStack {
                 Text("Weekly Plan")
                     .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                 Spacer()
                 HStack(spacing: 10) {
                     ForEach(ScheduledActivity.allCases) { a in
@@ -285,7 +285,7 @@ struct MainReadinessView: View {
                             Image(systemName: a.icon).font(.system(size: 9))
                             Text(a.label).font(.system(size: 10))
                         }
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(AppColors.textSecondary)
                     }
                 }
             }
@@ -312,19 +312,19 @@ struct MainReadinessView: View {
                 Text(date.formatted(.dateTime.weekday(.narrow)))
                     .font(.system(size: 10, weight: .semibold))
                     .textCase(.uppercase)
-                    .foregroundStyle(isToday ? .white : Color(.secondaryLabel))
+                    .foregroundStyle(isToday ? AppColors.textOnBrand : AppColors.textSecondary)
 
                 Text(date.formatted(.dateTime.day()))
                     .font(.system(size: 15, weight: .bold, design: .rounded))
-                    .foregroundStyle(isToday ? .white : (isPast ? Color(.tertiaryLabel) : Color(.label)))
+                    .foregroundStyle(isToday ? AppColors.textOnBrand : (isPast ? AppColors.textMuted : AppColors.textPrimary))
 
                 if let activity {
                     Image(systemName: activity.icon)
                         .font(.system(size: 11))
-                        .foregroundStyle(isToday ? .white : AppColors.accent)
+                        .foregroundStyle(isToday ? AppColors.textOnBrand : AppColors.brandPrimary)
                 } else {
                     Circle()
-                        .fill(isToday ? Color.white.opacity(0.4) : Color(.systemGray4))
+                        .fill(isToday ? AppColors.textOnBrand.opacity(0.4) : AppColors.border)
                         .frame(width: 5, height: 5)
                 }
             }
@@ -371,7 +371,7 @@ struct MainReadinessView: View {
             ProgressView().scaleEffect(1.4)
             Text("Loading your data…")
                 .font(.subheadline)
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
         }
     }
 
@@ -380,14 +380,14 @@ struct MainReadinessView: View {
         VStack(spacing: 20) {
             Image(systemName: "heart.text.square")
                 .font(.system(size: 64))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
 
             VStack(spacing: 8) {
                 Text("No Data Yet")
                     .font(.title3).bold()
                 Text("Wear your Apple Watch overnight and check back tomorrow for your first readiness score.")
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }
@@ -405,14 +405,14 @@ struct MainReadinessView: View {
         VStack(spacing: 20) {
             Image(systemName: "heart.slash")
                 .font(.system(size: 64))
-                .foregroundStyle(Color(.tertiaryLabel))
+                .foregroundStyle(AppColors.textMuted)
 
             VStack(spacing: 8) {
                 Text("HealthKit Access Required")
                     .font(.title3).bold()
                 Text(message)
                     .font(.subheadline)
-                    .foregroundStyle(Color(.secondaryLabel))
+                    .foregroundStyle(AppColors.textSecondary)
                     .multilineTextAlignment(.center)
                     .padding(.horizontal, 40)
             }

@@ -20,7 +20,7 @@ struct NotificationsView: View {
          "heart.fill",        AppColors.amberText),
         ("off",          "Off",
          "No notifications. You're on your own.",
-         "bell.slash.fill",   Color(.systemGray3)),
+         "bell.slash.fill",   AppColors.textMuted),
     ]
 
     var body: some View {
@@ -32,7 +32,7 @@ struct NotificationsView: View {
                     VStack(spacing: 0) {
                         Text("NOTIFICATION LEVEL")
                             .font(.system(size: 11, weight: .semibold))
-                            .foregroundStyle(Color(.secondaryLabel))
+                            .foregroundStyle(AppColors.textSecondary)
                             .kerning(0.5)
                             .frame(maxWidth: .infinity, alignment: .leading)
                             .padding(.horizontal, DS.Spacing.lg)
@@ -66,6 +66,7 @@ struct NotificationsView: View {
     private func levelRow(_ level: (key: String, label: String, desc: String, icon: String, color: Color)) -> some View {
         Button {
             notificationLevel = level.key
+            NotificationManager.shared.reschedule(level: level.key)
             Haptics.impact(.light)
         } label: {
             HStack(spacing: DS.Spacing.md) {
@@ -79,10 +80,10 @@ struct NotificationsView: View {
                 VStack(alignment: .leading, spacing: 2) {
                     Text(level.label)
                         .font(.system(size: 15, weight: .semibold))
-                        .foregroundStyle(Color(.label))
+                        .foregroundStyle(AppColors.textPrimary)
                     Text(level.desc)
                         .font(DS.Typography.caption())
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(AppColors.textSecondary)
                         .fixedSize(horizontal: false, vertical: true)
                 }
 

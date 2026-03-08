@@ -14,7 +14,7 @@ struct StatusChip: View {
                 .foregroundStyle(color)
             Text(value)
                 .font(DS.Typography.caption())
-                .foregroundStyle(Color(.label))
+                .foregroundStyle(AppColors.textPrimary)
         }
         .padding(.horizontal, DS.Spacing.sm)
         .padding(.vertical, 5)

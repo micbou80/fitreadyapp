@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// A white rounded card with a subtle shadow — the primary surface for Today V2 content.
+/// Elevated card surface — dark raised bg with border, no shadow.
 struct SoftCard<Content: View>: View {
 
     let content: () -> Content
@@ -17,6 +17,9 @@ struct SoftCard<Content: View>: View {
         .padding(DS.Spacing.lg)
         .background(DS.Background.card)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
-        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Corner.card)
+                .strokeBorder(DS.Border.color, lineWidth: 1)
+        )
     }
 }

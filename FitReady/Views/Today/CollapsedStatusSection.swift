@@ -1,7 +1,7 @@
 import SwiftUI
 
 /// Three always-visible daily stat cells (Steps / Calories / Protein)
-/// plus a contextual protein tip that adapts to how close the user is to their goal.
+/// each wrapped in a mini circular progress ring, plus a contextual protein tip.
 struct CollapsedStatusSection: View {
 
     @ObservedObject var vm: TodayViewModel
@@ -9,27 +9,40 @@ struct CollapsedStatusSection: View {
     var body: some View {
         VStack(spacing: DS.Spacing.md) {
 
-            // — Stat cells —
+            // — Section label —
+            Text("STEPS & NUTRITION")
+                .font(.system(size: 11, weight: .semibold))
+                .foregroundStyle(AppColors.textSecondary)
+                .kerning(0.5)
+                .frame(maxWidth: .infinity, alignment: .leading)
+
+            // — Stat cells with progress rings —
             HStack(spacing: 0) {
-                statCell(
+                ringCell(
                     icon:      "figure.walk",
-                    iconColor: AppColors.greenText,
+                    iconColor: AppColors.greenBase,
+                    progress:  stepProgress,
                     value:     formattedSteps,
-                    label:     "steps"
+                    label:     "steps",
+                    hit:       vm.collapsedStats.steps >= vm.collapsedStats.stepGoal
                 )
                 separator
-                statCell(
+                ringCell(
                     icon:      "fork.knife",
-                    iconColor: AppColors.amberText,
+                    iconColor: AppColors.amberBase,
+                    progress:  kcalProgress,
                     value:     formattedKcal,
-                    label:     "/ \(vm.collapsedStats.nutrition.kcalTarget) kcal"
+                    label:     "/ \(formattedKcalTarget) kcal",
+                    hit:       kcalProgress >= 0.90
                 )
                 separator
-                statCell(
-                    icon:      "dumbbell.fill",
+                ringCell(
+                    icon:      "🥚",
                     iconColor: AppColors.accent,
-                    value:     formattedProtein,
-                    label:     "protein"
+                    progress:  proteinProgress,
+                    value:     formattedProteinConsumed,
+                    label:     "/ \(formattedProteinTarget)g",
+                    hit:       proteinProgress >= 0.90
                 )
             }
 
@@ -42,7 +55,7 @@ struct CollapsedStatusSection: View {
                         .foregroundStyle(tipIconColor)
                     Text(tip)
                         .font(DS.Typography.caption())
-                        .foregroundStyle(Color(.secondaryLabel))
+                        .foregroundStyle(AppColors.textSecondary)
                     Spacer()
                 }
             }
@@ -53,21 +66,56 @@ struct CollapsedStatusSection: View {
         .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
-    // MARK: - Stat cell
+    // MARK: - Ring stat cell
 
     @ViewBuilder
-    private func statCell(icon: String, iconColor: Color, value: String, label: String) -> some View {
-        VStack(spacing: 4) {
-            Image(systemName: icon)
-                .font(.system(size: 13, weight: .semibold))
-                .foregroundStyle(iconColor)
+    private func ringCell(
+        icon:      String,
+        iconColor: Color,
+        progress:  Double,
+        value:     String,
+        label:     String,
+        hit:       Bool = false
+    ) -> some View {
+        VStack(spacing: 6) {
+            // Mini ring around icon
+            ZStack {
+                // Track
+                Circle()
+                    .stroke(iconColor.opacity(0.15), lineWidth: 3)
+                    .frame(width: 38, height: 38)
+                // Progress arc
+                Circle()
+                    .trim(from: 0, to: min(progress, 1))
+                    .stroke(iconColor, style: StrokeStyle(lineWidth: 3, lineCap: .round))
+                    .rotationEffect(.degrees(-90))
+                    .frame(width: 38, height: 38)
+                    .animation(.easeOut(duration: 0.6), value: progress)
+                // Icon
+                let isEmoji = icon.unicodeScalars.first.map { $0.value > 127 } ?? false
+                if isEmoji {
+                    Text(icon).font(.system(size: 15))
+                } else {
+                    Image(systemName: icon)
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(iconColor)
+                }
+            }
+            .overlay(alignment: .bottomTrailing) {
+                if hit {
+                    Image(systemName: "checkmark.circle.fill")
+                        .font(.system(size: 12, weight: .semibold))
+                        .foregroundStyle(AppColors.greenText)
+                        .background(Circle().fill(DS.Background.card).padding(-2))
+                }
+            }
             Text(value)
-                .font(.system(size: 16, weight: .semibold, design: .rounded))
+                .font(.system(size: 15, weight: .semibold, design: .rounded))
                 .minimumScaleFactor(0.75)
                 .lineLimit(1)
             Text(label)
                 .font(.system(size: 11, weight: .regular))
-                .foregroundStyle(Color(.secondaryLabel))
+                .foregroundStyle(AppColors.textSecondary)
                 .lineLimit(1)
         }
         .frame(maxWidth: .infinity)
@@ -75,7 +123,26 @@ struct CollapsedStatusSection: View {
 
     private var separator: some View {
         Divider()
-            .frame(height: 40)
+            .frame(height: 60)
+    }
+
+    // MARK: - Progress values
+
+    private var stepProgress: Double {
+        let n = vm.collapsedStats
+        return min(1.0, Double(n.steps) / Double(max(1, n.stepGoal)))
+    }
+
+    private var kcalProgress: Double {
+        let n = vm.collapsedStats.nutrition
+        guard n.kcalTarget > 0 else { return 0 }
+        return min(1.0, Double(n.kcalConsumed) / Double(n.kcalTarget))
+    }
+
+    private var proteinProgress: Double {
+        let n = vm.collapsedStats.nutrition
+        guard n.proteinTarget > 0 else { return 0 }
+        return min(1.0, Double(n.proteinConsumed) / Double(n.proteinTarget))
     }
 
     // MARK: - Formatting
@@ -89,13 +156,24 @@ struct CollapsedStatusSection: View {
     private var formattedKcal: String {
         let consumed = vm.collapsedStats.nutrition.kcalConsumed
         guard consumed > 0 else { return "—" }
-        return consumed >= 1_000 ? String(format: "%.1fk", Double(consumed) / 1_000) : "\(consumed)"
+        let fmt = NumberFormatter(); fmt.numberStyle = .decimal
+        return fmt.string(from: NSNumber(value: consumed)) ?? "\(consumed)"
     }
 
-    private var formattedProtein: String {
-        let n = vm.collapsedStats.nutrition
-        guard n.proteinConsumed > 0 || n.proteinTarget > 0 else { return "—" }
-        return "\(n.proteinConsumed) / \(n.proteinTarget)g"
+    private var formattedKcalTarget: String {
+        let fmt = NumberFormatter(); fmt.numberStyle = .decimal
+        let target = vm.collapsedStats.nutrition.kcalTarget
+        return fmt.string(from: NSNumber(value: target)) ?? "\(target)"
+    }
+
+    private var formattedProteinConsumed: String {
+        let consumed = vm.collapsedStats.nutrition.proteinConsumed
+        guard consumed > 0 else { return "—" }
+        return "\(consumed)g"
+    }
+
+    private var formattedProteinTarget: String {
+        "\(vm.collapsedStats.nutrition.proteinTarget)"
     }
 
     // MARK: - Contextual protein tip
