@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// Full-width CTA button with press animation and light haptic.
+/// Full-width pill CTA button with press animation and light haptic.
 struct PrimaryCTAButton: View {
 
     let label:  String
@@ -27,22 +27,37 @@ struct PrimaryCTAButton: View {
 
     var body: some View {
         Button {
-            withAnimation(.spring(response: 0.25, dampingFraction: 0.6)) { isPressed = true }
+            withAnimation(.easeInOut(duration: 0.12)) { isPressed = true }
             DispatchQueue.main.asyncAfter(deadline: .now() + 0.18) {
-                withAnimation(.spring(response: 0.3)) { isPressed = false }
+                withAnimation(.easeInOut(duration: 0.12)) { isPressed = false }
                 Haptics.impact(.medium)
                 action()
             }
         } label: {
-            Text(label)
-                .font(DS.Typography.body().weight(.semibold))
-                .foregroundStyle(labelColor)
-                .frame(maxWidth: .infinity)
-                .padding(.vertical, DS.Spacing.md)
-                .background(buttonColor)
-                .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
-                .scaleEffect(isPressed ? 0.97 : 1.0)
+            ZStack {
+                // Label — centered in full pill
+                Text(label.uppercased())
+                    .font(.system(size: 15, weight: .heavy, design: .default))
+                    .kerning(-0.5)
+                    .foregroundStyle(labelColor)
+                    .frame(maxWidth: .infinity)
+
+                // Icon — right-aligned inside the pill
+                HStack {
+                    Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 14, weight: .heavy))
+                        .foregroundStyle(labelColor)
+                        .padding(.trailing, 16)
+                }
+            }
+            .padding(.vertical, DS.Spacing.md)
+            .background(buttonColor)
+            .clipShape(Capsule())
+            .scaleEffect(isPressed ? 0.97 : 1.0)
+            .brightness(isPressed ? -0.10 : 0)
         }
         .buttonStyle(.plain)
+        .animation(.easeInOut(duration: 0.12), value: isPressed)
     }
 }

@@ -29,7 +29,7 @@ struct CollapsedStatusSection: View {
                 separator
                 ringCell(
                     icon:      "fork.knife",
-                    iconColor: AppColors.amberBase,
+                    iconColor: AppColors.metricActive,
                     progress:  kcalProgress,
                     value:     formattedKcal,
                     label:     "/ \(formattedKcalTarget) kcal",
@@ -82,7 +82,7 @@ struct CollapsedStatusSection: View {
             ZStack {
                 // Track
                 Circle()
-                    .stroke(iconColor.opacity(0.15), lineWidth: 3)
+                    .stroke(AppColors.metricInactive, lineWidth: 3)
                     .frame(width: 38, height: 38)
                 // Progress arc
                 Circle()

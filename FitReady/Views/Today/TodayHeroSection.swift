@@ -89,9 +89,11 @@ struct TodayHeroSection: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .background(
+        .background(DS.Background.card)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .overlay(
             RoundedRectangle(cornerRadius: DS.Corner.card)
-                .fill(DS.StateColor.background(for: vm.readinessState))
+                .strokeBorder(DS.Border.color, lineWidth: 1)
         )
     }
 
@@ -214,11 +216,11 @@ struct TodayHeroSection: View {
             } label: {
                 Label("Log a meal", systemImage: "camera.viewfinder")
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(AppColors.accent)
+                    .foregroundStyle(AppColors.brandPrimary)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.sm)
-                    .background(AppColors.accent.opacity(0.10))
-                    .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(AppColors.border, lineWidth: 1))
             }
             .buttonStyle(.plain)
         }

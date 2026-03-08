@@ -35,14 +35,14 @@ struct MacroSummaryCard: View {
                     label: "kcal",
                     actual: actualKcal.map { Int($0.rounded()) },
                     target: targets.kcal,
-                    color: AppColors.dataCalories,
+                    color: AppColors.metricActive,
                     format: { "\($0)" }
                 )
                 macroColumn(
                     label: "protein",
                     actual: actualProteinG.map { Int($0.rounded()) },
                     target: targets.proteinG,
-                    color: AppColors.dataProtein,
+                    color: AppColors.metricActive,
                     format: { "\($0)g" }
                 )
                 macroColumn(
@@ -96,7 +96,7 @@ struct MacroSummaryCard: View {
             GeometryReader { geo in
                 ZStack(alignment: .leading) {
                     Capsule()
-                        .fill(AppColors.border)
+                        .fill(AppColors.metricInactive)
                         .frame(height: 5)
                     Capsule()
                         .fill(color)
