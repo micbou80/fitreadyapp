@@ -68,15 +68,43 @@ tracking, and a full profile system.
 - HealthKit dietary data takes priority over scanned/manual entries when available
 - Anthropic API key stored in `anthropicAPIKey` AppStorage, entered in Settings
 
+**Evening check-out**
+- 3-step flow (Energy → Mood → Affirmation) triggered after 9 pm, locked per calendar day
+- Day signals card: Steps, Calories, Protein (🥚), Active kcal — each with hit/miss indicator
+- Celebration tiers on final screen: confetti + decrescendo haptics (3 pillars) / high-five icon + lighter haptics (2) / haptic only (1) / encouragement (0)
+- Personalised affirmation title (uses profile name) + second-person body copy
+- Caloric balance pill (green = deficit/on-target, amber = surplus)
+- Stored as `DailyCheckOut` in `checkOutsJSON` AppStorage (capped to 30 entries)
+- Pillars: `stepsHit` ≥ 10k, `proteinHit` ≥ 90% target, `activeHit` ≥ 300 kcal
+
+**Day Closed hero card**
+- `TodayHeroSection` switches to green-tinted closed state after check-out until midnight
+- Shows affirmation title + body from `DailyCheckOut`
+- Single-row mini stats: 🚶 steps · 🥚 protein · ⚡ kcal · ➖ deficit
+- Tomorrow type signal (Train / Light / Rest) from weekly plan
+
 **Profile**
 - Name, profile photo, height, age, biological sex, training days/week, training location, units (metric/imperial)
 - Primary goal (lose / maintain / gain / build muscle) and weekly pace
 - Notification level preference
+- Dev reset button (resets `lastCheckOutDate` + opens check-out preview)
+
+**Notifications (Moderate tier)**
+- `NotificationManager` singleton in `Services/`
+- Moderate = 3 daily repeating reminders (7:30 am, 3:00 pm, 9:00 pm) + once-per-day recovery alert
+- Recovery alert fires in-app when readiness is yellow or red (uses `recoveryAlertSent_yyyy-MM-dd` UserDefaults key to gate once/day)
+- Permission requested on first app launch alongside HealthKit
+- Other tiers (everything / light / affirmations / off) defined in `NotificationsView` UI but not yet implemented
 
 **Today screen (V2)**
-- Decision-first layout: verdict + ring → primary CTA → secondary actions → week strip → macro status
-- Weekly training plan: tap each day to cycle Rest → Run → Workout → clear
+- Decision-first layout: hero card (verdict + CTAs) → quick recovery carousel → week strip → steps/nutrition status
+- Hero card (`TodayHeroSection`): readiness chip + headline + reason + "See details" + primary CTA pill + ghost "Log a meal" pill
+- Primary CTA (`PrimaryCTAButton`): lime pill, uppercased heavy label, chevron.right right-aligned; 120ms press animation with scale(0.97) + brightness(−0.10)
+- Secondary "Log a meal" button: ghost pill with 1pt border, no fill
+- Quick Recovery carousel (`RecoveryCarouselSection`): horizontal scroll — Breathe (5 min) + Quick Mobility (8 min) live; Cold Splash + Focus Sound locked/coming soon
+- Weekly training plan: tap each day to cycle Rest / Light / Workout
 - Reinforcement card (motivational, adapts to readiness state)
+- CollapsedStatusSection: Steps + kcal + protein each with circular progress ring; track = `metricInactive`, fill = `metricActive`
 
 **V1 Today screen** (`MainReadinessView.swift`) is preserved for comparison. Not in the active tab bar.
 
@@ -106,11 +134,13 @@ FitReady/
     ReadinessScore.swift            ← ReadinessVerdict enum + ReadinessScore struct
     TodayModels.swift               ← TodayAction, TodayTip, pillar structs
     MealEntry.swift                 ← Codable meal log entry (id, date, name, macros, source)
+    DailyCheckOut.swift             ← Codable check-out entry; affirmation copy; AppStorage helpers
   Services/
     HealthKitManager.swift          ← all HK queries (async/await), @MainActor ObservableObject
     ReadinessEngine.swift           ← pure scoring logic, AppSettings struct
     MacroEngine.swift               ← Mifflin-St Jeor BMR + macro targets computation
     AnthropicService.swift          ← POST /v1/messages with vision, returns FoodScanResult
+    NotificationManager.swift       ← UNUserNotificationCenter singleton; schedules moderate tier
   Theme/
     AppColors.swift                 ← single source of truth for ALL colors (dark-mode adaptive)
     DesignTokens.swift              ← DS.Spacing, DS.Corner, DS.Typography, DS.Shadow — delegates to AppColors
@@ -118,31 +148,38 @@ FitReady/
     Today/
       TodayView.swift               ← V2 Today screen, hosts sub-sections
       TodayViewModel.swift          ← @MainActor ObservableObject, orchestrates Today state
-      TodayHeroSection.swift        ← readiness ring + verdict + subtitle
-      PrimaryActionSection.swift    ← main CTA card (train / run / rest)
+      TodayHeroSection.swift        ← hero card: verdict chip + headline + primary CTA pill + ghost secondary
+      PrimaryActionSection.swift    ← legacy stub (superseded by TodayHeroSection CTAs)
       SecondaryActionsSection.swift ← secondary action chips row
-      CollapsedStatusSection.swift  ← collapsed metric + macro status bar
+      RecoveryCarouselSection.swift ← horizontal quick recovery card carousel (Breathe · Mobility · locked)
+      QuickRecoveryCard.swift       ← compact recovery card used in carousel
+      CollapsedStatusSection.swift  ← steps + kcal + protein rings (track = metricInactive)
       WeekCalendarStrip.swift       ← Mon–Sun training plan picker
       ReinforcementSection.swift    ← motivational reinforcement card
       ReadinessDetailsSheet.swift   ← full metric breakdown sheet
+      TomorrowSignalSection.swift   ← tomorrow plan type signal
     Components/
       ReadinessRingView.swift       ← animated ring (AngularGradient, spring)
       MetricCardView.swift          ← reusable HRV / RHR / Sleep card
       WeightCardView.swift          ← weight progress card (current → goal bar)
       BodyFatCardView.swift         ← body fat % card
-      MacroSummaryCard.swift        ← daily macro progress rings
-      PrimaryCTAButton.swift        ← full-width action button
+      MacroSummaryCard.swift        ← daily macro progress bars (metricActive fill, metricInactive track)
+      PrimaryCTAButton.swift        ← lime/amber/red pill CTA; uppercased heavy label + chevron.right
       FoodScannerSheet.swift        ← camera/library picker + Claude analysis + review + log
       MiniRing.swift                ← small ring for reinforcement section
-      SoftCard.swift                ← reusable card container
+      SoftCard.swift                ← reusable card container (raised bg + 1pt border, no shadow)
       StatusChip.swift              ← small status badge chip
       HapticsManager.swift          ← UIImpactFeedbackGenerator + UINotificationFeedbackGenerator wrapper
+    BreathingExerciseView.swift     ← 5-min guided breathing full-screen (3s in · 4s out loop)
+    EveningCheckOutView.swift       ← 3-step check-out flow + ConfettiView (file-private)
     FoodView.swift                  ← Food tab: macro rings, meal log list, scanner/manual entry
     HistoryView.swift               ← Insights tab: 7-day line charts for HRV / RHR / Sleep
-    ProfileView.swift               ← Profile hub, navigates to sub-views
+    MenuAdvisorView.swift           ← AI-powered meal suggestions by readiness state
+    ProfileView.swift               ← Profile hub, navigates to sub-views; dev reset button
     PersonalSettingsView.swift      ← name, photo, height, age, sex, training days/location, units
     GoalsView.swift                 ← primary goal, pace, goal targets (weight/fat%/date), Personalize My Plan → PlanSplashView
     NotificationsView.swift         ← notification level preference selector
+    RecoveryWorkoutView.swift       ← 7-min guided mobility session (step-by-step)
     SettingsView.swift              ← thresholds, baseline window, sleep target, AI scanner API key
     MainReadinessView.swift         ← V1 Today screen (preserved, NOT in tab bar)
 ```
@@ -188,17 +225,41 @@ Total −3 to +3 → verdict: ≥ 2 Ready / 0–1 Go Light / ≤ −1 Rest Day
 
 ### Color System (AppColors)
 `FitReady/Theme/AppColors.swift` is the **only** place colors are defined. All other files use
-`AppColors.<token>`. Never add hardcoded `Color(red:...)`, hex literals, `.purple`, or
-`Color.accentColor` anywhere else.
+`AppColors.<token>`. Never add hardcoded `Color(red:...)`, hex literals, or SwiftUI system color
+names (`.purple`, `.blue`, etc.) anywhere else. App is locked to dark mode via
+`preferredColorScheme(.dark)` in `FitReadyApp.swift`.
 
-Key tokens:
-- `AppColors.background` / `.card` — adaptive UIColor for dark mode (no system color)
-- `AppColors.accent` — #7C3AED purple
-- `AppColors.green/amber/redBase` — bright fills (rings, charts)
-- `AppColors.green/amber/redText` — dark variants safe on white backgrounds
-- `AppColors.green/amber/redSoft` — very light tint backgrounds
-- `AppColors.dataProtein/Carbs/Fat/Calories/Sleep` — nutrition/health chart colors
-- `AppColors.stateBase/Soft/Text(for: ReadinessState)` — state-keyed helpers
+**16-token palette:**
+
+| Token | Hex | Usage |
+|-------|-----|-------|
+| `brandPrimary` | #C8F135 | primary CTA bg, active metric fill, icons |
+| `brandDark` | #9BBF1A | hover / pressed tint of brand |
+| `brandMuted` | #3D4A1A | icon backgrounds on recovery cards |
+| `bg` | #0D0F0B | page / screen background |
+| `surface` | #1A1D16 | inset surfaces, picker backgrounds |
+| `raised` | #222619 | card backgrounds (SoftCard, hero card) |
+| `border` | #3A4030 | card borders, dividers, ghost button strokes |
+| `textPrimary` | #F0F5E8 | primary readable text |
+| `textSecondary` | #9AA88C | labels, captions, supporting text |
+| `textMuted` | #5C6652 | disabled, placeholder, very subtle |
+| `textOnBrand` | #0D0F0B | text on lime / amber fills |
+| `warning` | #F5A623 | yellow/amber state (Go Light) |
+| `danger` | #E8453C | red state (Rest Day) |
+| `info` | #4DA6FF | sleep metric, informational |
+| `metricActive` | #C8F135 | progress ring/bar fill |
+| `metricInactive` | #323D28 | progress ring/bar track |
+
+**Backward-compat aliases** (compile but resolve to new tokens):
+`accent = brandPrimary`, `background = bg`, `card = raised`, `shadowColor = .clear`,
+`greenBase/greenText = metricActive/brandPrimary`, `amberBase/amberText = warning`,
+`redBase/redText = danger`, `dataProtein = brandPrimary`, `dataCalories/dataCarbs/dataSleep = info/warning/info`
+
+**Design system rules:**
+- Cards: `raised` bg + 1pt `border` overlay — no shadows (`DS.Shadow` is zeroed)
+- CTAs: `brandPrimary` bg + `textOnBrand` text (lime); `warning` bg + `textOnBrand` (amber); `danger` bg + `textPrimary` (red)
+- Progress rings: `metricActive` fill, `metricInactive` track
+- Recovery card icons: `brandMuted` bg + `brandPrimary` icon (active cards)
 
 ### Persistence (AppStorage Keys)
 All settings live in UserDefaults via `@AppStorage`. No CoreData.
@@ -239,13 +300,16 @@ All settings live in UserDefaults via `@AppStorage`. No CoreData.
 | `weeklyScheduleJSON` | String | "{}" | V1 weekly plan JSON (MainReadinessView) |
 | `weeklyPlan` | String | "W,L,W,L,W,R,R" | V2 weekly plan comma-separated |
 | `anthropicAPIKey` | String | "" | Anthropic API key for food scanner |
-| `notificationLevel` | String | "moderate" | Notification preference |
+| `notificationLevel` | String | "moderate" | Notification preference (everything/moderate/light/affirmations/off) |
+| `checkOutsJSON` | String | "[]" | JSON-encoded `[DailyCheckOut]`, capped to 30 entries |
+| `lastCheckOutDate` | String | "" | `yyyy-MM-dd` of last completed check-out; gates once-per-day lock |
+| `lastCheckOutMessage` | String | "" | Affirmation title from last check-out (fallback display) |
 
 ### Xcode Project (project.pbxproj)
 - Manually maintained — no Swift Package Manager, no CocoaPods
 - UUIDs are exactly **24 hex characters**, prefix `BF000000000000000000`
-- **Next available build file UUID:** `BF0000000000000000000086`
-- **Next available file reference UUID:** `BF0000000000000000000087`
+- **Next available build file UUID:** `BF0000000000000000000095`
+- **Next available file reference UUID:** `BF0000000000000000000096`
 - When adding a new Swift file, add entries in **four** places:
   1. `PBXBuildFile` section (build file UUID → file ref UUID)
   2. `PBXFileReference` section (file ref UUID → path)
@@ -286,10 +350,12 @@ In rough priority order:
 
 1. **Workout logging** — pre-filled sessions, tap-to-log reps/sets, auto-progression (e1RM)
 2. **Training templates** — Full Body (2–3d), Upper/Lower (4d), PPL (5d+)
-3. **Onboarding flow** — goal, training days, gym type, HealthKit connect
-4. **Daily momentum score** — 2/3 pillars = success, not streaks
-5. **WatchOS companion** — readiness glance, workout log
-6. **Subscriptions** — €7.99/mo or €59/yr, 7-day trial
+3. **Expand quick workouts** — add more Quick Recovery variants (yoga flow, foam roll, breathing) beyond the current 7-min mobility session; surface them from the Today screen
+4. **Strengthen momentum card** — current ring + message is weak; needs real weekly signal (train days hit, protein days hit, sleep days hit = 3 pillars); should feel like a score not a counter
+5. **Onboarding flow** — goal, training days, gym type, HealthKit connect
+6. **Daily momentum score** — 2/3 pillars = success, not streaks
+6. **WatchOS companion** — readiness glance, workout log
+7. **Subscriptions** — €7.99/mo or €59/yr, 7-day trial
 
 ### AI Strategy
 - `claude-sonnet-4-6`: food photo estimation (current)
