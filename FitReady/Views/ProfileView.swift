@@ -103,6 +103,8 @@ struct ProfileView: View {
                         .padding(.top, DS.Spacing.xl)
                         .padding(.bottom, DS.Spacing.xl)
 
+                    statusSection
+
                     sectionGroup(title: "Account") {
                         menuRow(icon: "person.text.rectangle.fill",
                                 title: "Profile data") { PersonalSettingsView() }
@@ -110,8 +112,6 @@ struct ProfileView: View {
                         menuRow(icon: "target",
                                 title: "My goals") { GoalsView() }
                     }
-
-                    statusSection
 
                     sectionGroup(title: "Preferences") {
                         toggleRow(icon: "moon.fill",
