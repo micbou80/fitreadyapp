@@ -35,6 +35,7 @@ struct ProfileView: View {
     @State private var showingOnboarding:   Bool = false
     @State private var showingResetConfirm: Bool = false
     @State private var showingAPIKey:       Bool = false
+    @State private var showingStatusPicker: Bool = false
 
     // MARK: - Hero palette (always dark, like TodayHeroSection)
 
@@ -156,6 +157,9 @@ struct ProfileView: View {
         }
         .fullScreenCover(isPresented: $showingOnboarding) {
             OnboardingView { showingOnboarding = false }
+        }
+        .sheet(isPresented: $showingStatusPicker) {
+            SetStatusSheet(userStatus: $userStatus)
         }
         .sheet(isPresented: $showingAPIKey) {
             APIKeySheet(apiKey: $anthropicAPIKey)
@@ -311,14 +315,13 @@ struct ProfileView: View {
                 .padding(.horizontal, DS.Spacing.lg + DS.Spacing.sm)
                 .padding(.top, DS.Spacing.sm)
 
-            VStack(spacing: 0) {
-                // Description
+            Button { showingStatusPicker = true } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: UserStatus.from(userStatus).icon)
-                        .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(UserStatus.from(userStatus).color)
+                        .font(.system(size: 15, weight: .regular))
+                        .foregroundStyle(AppColors.brandPrimary)
                         .frame(width: 32, height: 32)
-                        .background(UserStatus.from(userStatus).color.opacity(0.15))
+                        .background(AppColors.raised)
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     VStack(alignment: .leading, spacing: 2) {
@@ -330,56 +333,20 @@ struct ProfileView: View {
                             .foregroundStyle(AppColors.textSecondary)
                     }
                     Spacer()
+                    Image(systemName: "chevron.right")
+                        .font(.system(size: 13, weight: .semibold))
+                        .foregroundStyle(AppColors.textMuted)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.vertical, DS.Spacing.sm)
-
-                Divider().padding(.leading, 56)
-
-                // Status picker grid
-                LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: DS.Spacing.sm) {
-                    ForEach(UserStatus.allCases, id: \.rawValue) { status in
-                        statusChip(status)
-                    }
-                }
-                .padding(.horizontal, DS.Spacing.md)
-                .padding(.bottom, DS.Spacing.md)
-                .padding(.top, DS.Spacing.sm)
+                .background(.ultraThinMaterial)
+                .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+                .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
+                .padding(.horizontal, DS.Spacing.lg)
             }
-            .background(.ultraThinMaterial)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
-            .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
-            .padding(.horizontal, DS.Spacing.lg)
+            .buttonStyle(.plain)
         }
         .padding(.bottom, 2)
-    }
-
-    @ViewBuilder
-    private func statusChip(_ status: UserStatus) -> some View {
-        let isSelected = userStatus == status.rawValue
-        Button {
-            userStatus = status.rawValue
-            Haptics.impact(.light)
-        } label: {
-            HStack(spacing: DS.Spacing.xs) {
-                Image(systemName: status.icon)
-                    .font(.system(size: 13, weight: .medium))
-                    .foregroundStyle(isSelected ? AppColors.textOnBrand : status.color)
-                Text(status.label)
-                    .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(isSelected ? AppColors.textOnBrand : AppColors.textPrimary)
-                Spacer()
-            }
-            .padding(.horizontal, DS.Spacing.sm)
-            .padding(.vertical, DS.Spacing.sm)
-            .background(isSelected ? AppColors.brandPrimary : AppColors.surface)
-            .clipShape(RoundedRectangle(cornerRadius: DS.Corner.chip))
-            .overlay(
-                RoundedRectangle(cornerRadius: DS.Corner.chip)
-                    .strokeBorder(isSelected ? AppColors.brandPrimary : DS.Border.color, lineWidth: 1)
-            )
-        }
-        .buttonStyle(.plain)
     }
 
     // MARK: - Section group
@@ -531,6 +498,111 @@ struct ProfileView: View {
                     .foregroundStyle(AppColors.textMuted)
             })
         }
+    }
+}
+
+// MARK: - Set Status Sheet
+
+private struct SetStatusSheet: View {
+
+    @Binding var userStatus: String
+    @Environment(\.dismiss) private var dismiss
+
+    var body: some View {
+        ZStack {
+            AppColors.bg.ignoresSafeArea()
+
+            VStack(spacing: 0) {
+
+                // Title
+                Text("Set Status")
+                    .font(.system(size: 26, weight: .bold, design: .rounded))
+                    .foregroundStyle(AppColors.textPrimary)
+                    .frame(maxWidth: .infinity, alignment: .leading)
+                    .padding(.horizontal, DS.Spacing.lg)
+                    .padding(.top, DS.Spacing.xl)
+                    .padding(.bottom, DS.Spacing.lg)
+
+                // Status rows
+                VStack(spacing: DS.Spacing.sm) {
+                    ForEach(UserStatus.allCases, id: \.rawValue) { status in
+                        statusRow(status)
+                    }
+                }
+                .padding(.horizontal, DS.Spacing.lg)
+
+                Spacer()
+
+                // Done button
+                Button {
+                    Haptics.impact(.light)
+                    dismiss()
+                } label: {
+                    Text("DONE")
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(AppColors.textPrimary)
+                        .frame(maxWidth: .infinity)
+                        .padding(.vertical, DS.Spacing.md)
+                        .background(AppColors.raised)
+                        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.button))
+                }
+                .buttonStyle(.plain)
+                .padding(.horizontal, DS.Spacing.lg)
+                .padding(.bottom, DS.Spacing.xl)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func statusRow(_ status: UserStatus) -> some View {
+        let isSelected = userStatus == status.rawValue
+
+        Button {
+            userStatus = status.rawValue
+            Haptics.impact(.light)
+        } label: {
+            HStack(spacing: DS.Spacing.md) {
+
+                // Icon
+                Image(systemName: status.icon)
+                    .font(.system(size: 20, weight: .regular))
+                    .foregroundStyle(isSelected ? AppColors.brandPrimary : AppColors.textSecondary)
+                    .frame(width: 28)
+
+                // Text block
+                VStack(alignment: .leading, spacing: 3) {
+                    Text(status.label)
+                        .font(.system(size: 16, weight: .bold))
+                        .foregroundStyle(AppColors.textPrimary)
+                    Text(status.tagline)
+                        .font(DS.Typography.caption())
+                        .foregroundStyle(AppColors.textSecondary)
+                }
+
+                Spacer()
+
+                // Radio button
+                ZStack {
+                    if isSelected {
+                        Circle()
+                            .fill(AppColors.brandPrimary)
+                            .frame(width: 22, height: 22)
+                        Circle()
+                            .fill(AppColors.textOnBrand)
+                            .frame(width: 8, height: 8)
+                    } else {
+                        Circle()
+                            .strokeBorder(AppColors.border, lineWidth: 1.5)
+                            .frame(width: 22, height: 22)
+                    }
+                }
+            }
+            .padding(.horizontal, DS.Spacing.lg)
+            .frame(minHeight: 70)
+            .background(isSelected ? AppColors.raised : AppColors.surface)
+            .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        }
+        .buttonStyle(.plain)
     }
 }
 

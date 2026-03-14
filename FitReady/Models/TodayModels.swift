@@ -22,19 +22,19 @@ enum UserStatus: String, CaseIterable {
 
     var tagline: String {
         switch self {
-        case .active:  return "Training as usual"
-        case .sick:    return "Rest and recover — skip training"
-        case .injured: return "Modified training only"
-        case .onBreak: return "Intentional break from training"
+        case .active:  return "Being healthy and active."
+        case .sick:    return "Needing rest to get well."
+        case .injured: return "Needing time to heal."
+        case .onBreak: return "Taking a few days off to recover."
         }
     }
 
     var icon: String {
         switch self {
         case .active:  return "figure.run"
-        case .sick:    return "thermometer.medium"
-        case .injured: return "bandage.fill"
-        case .onBreak: return "moon.zzz.fill"
+        case .sick:    return "thermometer"
+        case .injured: return "figure.mind.and.body"
+        case .onBreak: return "sun.horizon"
         }
     }
 
