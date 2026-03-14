@@ -25,14 +25,10 @@ struct TodayView: View {
     // Profile
     @AppStorage("profileName")           private var profileName:     String = ""
     @AppStorage("profilePhotoData")      private var profilePhotoData: Data  = Data()
+    @AppStorage("userStatus")            private var userStatus:       String = "active"
 
     // Settings needed to compute ReadinessScore + MacroTargets
-    @AppStorage("baselineDays")          private var baselineDays: Int    = 7
-    @AppStorage("sleepTargetHours")      private var sleepTargetHours: Double = 7.5
-    @AppStorage("hrvGoodThreshold")      private var hrvGoodThreshold: Double = 0.95
-    @AppStorage("hrvNeutralThreshold")   private var hrvNeutralThreshold: Double = 0.80
-    @AppStorage("rhrGoodThreshold")      private var rhrGoodThreshold: Double = 1.03
-    @AppStorage("rhrNeutralThreshold")   private var rhrNeutralThreshold: Double = 1.08
+    @AppStorage("sleepTargetHours")      private var sleepTargetHours: Double = 8.0
     @AppStorage("heightCm")             private var heightCm: Double = 0
     @AppStorage("ageYears")             private var ageYears: Int    = 0
     @AppStorage("biologicalSex")        private var biologicalSex: String = ""
@@ -50,15 +46,6 @@ struct TodayView: View {
         return healthKit.currentWeightKg
     }
 
-    /// Live TDEE = BMR + Apple Watch active kcal — matches the Food tab calculation.
-    private var liveTDEE: Double? {
-        guard let wt = displayWeight, heightCm > 0, ageYears > 0, !biologicalSex.isEmpty,
-              let neat = healthKit.todayActiveKcal else { return nil }
-        let bmr = MacroEngine.bmr(weightKg: wt, heightCm: heightCm, ageYears: ageYears,
-                                  isMale: biologicalSex == "male")
-        return bmr + neat
-    }
-
     private var macroTargets: MacroTargets? {
         guard let wt = displayWeight, heightCm > 0, ageYears > 0, !biologicalSex.isEmpty else { return nil }
         return MacroEngine.compute(
@@ -69,22 +56,14 @@ struct TodayView: View {
             activityLevel: activityLevel,
             paceKgPerWeek: weightLossPace,
             proteinPerKg:  proteinPerKg,
-            fatFloorPct:   fatFloorPct,
-            tdeeOverride:  liveTDEE
+            fatFloorPct:   fatFloorPct
         )
     }
 
     private var readinessScore: ReadinessScore? {
         guard let today = healthKit.todayMetrics,
               !healthKit.baselineMetrics.isEmpty else { return nil }
-        let settings = AppSettings(
-            baselineDays:        baselineDays,
-            sleepTargetHours:    sleepTargetHours,
-            hrvGoodThreshold:    hrvGoodThreshold,
-            hrvNeutralThreshold: hrvNeutralThreshold,
-            rhrGoodThreshold:    rhrGoodThreshold,
-            rhrNeutralThreshold: rhrNeutralThreshold
-        )
+        let settings = AppSettings(sleepTargetHours: sleepTargetHours)
         return ReadinessEngine.compute(today: today, baseline: healthKit.baselineMetrics, settings: settings)
     }
 
@@ -94,13 +73,10 @@ struct TodayView: View {
         return fmt.string(from: Date())
     }
 
-    /// Today's planned day type ("W", "L", or "R") from the weekly plan template.
-    private var todayPlanLetter: String {
-        let parts = weeklyPlan.components(separatedBy: ",")
-        guard parts.count == 7 else { return "W" }
-        let weekday = Calendar.current.component(.weekday, from: Date()) // 1=Sun … 7=Sat
-        let mondayIndex = (weekday - 2 + 7) % 7
-        return parts[min(mondayIndex, 6)]
+    /// Today's planned day type from the weekly plan template (auto-migrates old W/L/R codes).
+    private var todayPlanType: PlanDayType {
+        let mondayIndex = (Calendar.current.component(.weekday, from: Date()) - 2 + 7) % 7
+        return PlanDayType.week(from: weeklyPlan)[min(mondayIndex, 6)]
     }
 
     /// Totals from scanned/logged meals for today — used as fallback when HealthKit
@@ -153,8 +129,11 @@ struct TodayView: View {
                         // — Next Win: nutrition / steps —
                         CollapsedStatusSection(vm: vm)
 
-                        // — Momentum: weekly consistency —
-                        ReinforcementSection(vm: vm)
+                        // — Energy balance: TDEE vs food logged —
+                        EnergyBalanceSection(vm: vm)
+
+                        // — Weekly review —
+                        WeeklyReviewCard()
 
                         Spacer(minLength: DS.Spacing.xl)
                     }
@@ -182,6 +161,7 @@ struct TodayView: View {
         .onChange(of: healthKit.weeklySteps)      { _, _ in updateFromHealthKit() }
         .onChange(of: mealsJSON)                  { _, _ in updateFromHealthKit() }
         .onChange(of: weeklyPlan)                 { _, _ in updateFromHealthKit() }
+        .onChange(of: userStatus)                 { _, _ in updateFromHealthKit() }
     }
 
     // MARK: - Greeting header
@@ -224,8 +204,9 @@ struct TodayView: View {
     private func updateFromHealthKit() {
         guard let score = readinessScore else { return }
         vm.update(from: score, healthKit: healthKit, macroTargets: macroTargets,
-                  mealTotals: mealTotals, planLetter: todayPlanLetter,
-                  weeklySteps: healthKit.weeklySteps)
+                  mealTotals: mealTotals, planType: todayPlanType,
+                  weeklySteps: healthKit.weeklySteps,
+                  userStatus: UserStatus.from(userStatus))
         NotificationManager.shared.sendRecoveryAlertIfNeeded(
             state: vm.readinessState, level: notificationLevel)
     }
@@ -257,7 +238,6 @@ struct TodayView: View {
                     TodayHeroSection(vm: vm)
                     RecoveryCarouselSection()
                     CollapsedStatusSection(vm: vm)
-                    ReinforcementSection(vm: vm)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)
@@ -276,7 +256,6 @@ struct TodayView: View {
                     TodayHeroSection(vm: vm)
                     RecoveryCarouselSection()
                     CollapsedStatusSection(vm: vm)
-                    ReinforcementSection(vm: vm)
                 }
                 .padding(.horizontal, DS.Spacing.lg)
                 .padding(.top, DS.Spacing.sm)

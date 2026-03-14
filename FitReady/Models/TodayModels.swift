@@ -1,4 +1,132 @@
 import Foundation
+import SwiftUI
+
+// MARK: - User status
+
+/// Current health/training status set by the user.
+/// Overrides or adjusts the readiness verdict and Today-screen copy.
+enum UserStatus: String, CaseIterable {
+    case active   = "active"
+    case sick     = "sick"
+    case injured  = "injured"
+    case onBreak  = "on_break"
+
+    var label: String {
+        switch self {
+        case .active:  return "Active"
+        case .sick:    return "Sick"
+        case .injured: return "Injured"
+        case .onBreak: return "On a break"
+        }
+    }
+
+    var tagline: String {
+        switch self {
+        case .active:  return "Training as usual"
+        case .sick:    return "Rest and recover — skip training"
+        case .injured: return "Modified training only"
+        case .onBreak: return "Intentional break from training"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .active:  return "figure.run"
+        case .sick:    return "thermometer.medium"
+        case .injured: return "bandage.fill"
+        case .onBreak: return "moon.zzz.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .active:  return AppColors.brandForeground
+        case .sick:    return AppColors.danger
+        case .injured: return AppColors.warning
+        case .onBreak: return AppColors.textSecondary
+        }
+    }
+
+    /// When non-active, forces the readiness verdict to a specific level.
+    var readinessOverride: ReadinessState? {
+        switch self {
+        case .active:  return nil
+        case .sick:    return .red
+        case .injured: return .yellow   // move, but go easy
+        case .onBreak: return .red
+        }
+    }
+
+    static func from(_ raw: String) -> UserStatus {
+        UserStatus(rawValue: raw) ?? .active
+    }
+}
+
+// MARK: - Plan day type
+
+enum PlanDayType: String, CaseIterable {
+    case strength, run, walk, mobility, rest
+
+    var label: String {
+        switch self {
+        case .strength: return "Strength"
+        case .run:      return "Run"
+        case .walk:     return "Walk"
+        case .mobility: return "Mobility"
+        case .rest:     return "Rest"
+        }
+    }
+
+    var icon: String {
+        switch self {
+        case .strength: return "dumbbell.fill"
+        case .run:      return "figure.run"
+        case .walk:     return "figure.walk"
+        case .mobility: return "figure.flexibility"
+        case .rest:     return "moon.fill"
+        }
+    }
+
+    var color: Color {
+        switch self {
+        case .strength: return AppColors.brandForeground
+        case .run:      return AppColors.info
+        case .walk:     return AppColors.textSecondary
+        case .mobility: return AppColors.warning
+        case .rest:     return AppColors.textMuted
+        }
+    }
+
+    var isActive: Bool { self != .rest }
+
+    var next: PlanDayType {
+        let all = PlanDayType.allCases
+        return all[((all.firstIndex(of: self) ?? 0) + 1) % all.count]
+    }
+
+    /// Auto-migrates old W/L/R codes
+    static func from(_ raw: String) -> PlanDayType {
+        if let t = PlanDayType(rawValue: raw) { return t }
+        switch raw {
+        case "W": return .strength
+        case "L": return .walk
+        case "R": return .rest
+        default:  return .rest
+        }
+    }
+
+    /// Parse comma-separated weeklyPlan string (migrates old codes)
+    static func week(from plan: String) -> [PlanDayType] {
+        let parts = plan.components(separatedBy: ",")
+        guard parts.count == 7 else { return Array(repeating: .rest, count: 7) }
+        return parts.map { from($0) }
+    }
+
+    /// Serialize back to storage string
+    static func store(_ types: [PlanDayType]) -> String {
+        types.map(\.rawValue).joined(separator: ",")
+    }
+}
 
 // MARK: - Readiness state
 
@@ -10,7 +138,7 @@ enum ReadinessState {
         switch self {
         case .green:  return "Train"
         case .yellow: return "Go lighter"
-        case .red:    return "Recover"
+        case .red:    return "Rest"
         }
     }
 }
@@ -145,12 +273,12 @@ enum TodayMockData {
             )
         case .red:
             return TodayAction(
-                title:            "Recovery day",
-                duration:         "20 min",
-                ctaLabel:         "Start Recovery Walk",
-                bullets:          ["Easy pace, no breathlessness", "Gentle movement keeps momentum"],
-                completedMessage: "Done. That counts.",
-                nextSuggestion:   "Rest is training. You'll come back stronger tomorrow."
+                title:            "Rest today.",
+                duration:         "—",
+                ctaLabel:         "Hit your step goal",
+                bullets:          ["No intensity — easy movement only", "10,000 steps keeps the momentum going"],
+                completedMessage: "Smart call. Rest is training.",
+                nextSuggestion:   "You'll come back stronger tomorrow. Log your meals and sleep well."
             )
         }
     }

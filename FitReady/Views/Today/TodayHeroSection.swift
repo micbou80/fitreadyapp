@@ -12,6 +12,31 @@ struct TodayHeroSection: View {
     @AppStorage("checkOutsJSON")     private var checkOutsJSON:     String = "[]"
     @AppStorage("weeklyPlan")        private var weeklyPlan:        String = "W,L,W,L,W,R,R"
 
+    @State private var showMobility  = false
+    @State private var showBreathing = false
+
+    @Environment(\.colorScheme) private var colorScheme
+
+    // MARK: - Hero card color helpers (light mode = always-dark card)
+
+    private var heroTextColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2") : AppColors.textPrimary
+    }
+    private var heroSubtextColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2").opacity(0.75) : AppColors.textSecondary
+    }
+    private var heroMutedColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2").opacity(0.55) : AppColors.textMuted
+    }
+    private var heroBg: Color {
+        colorScheme == .light ? Color(hex: "20422E") : .clear
+    }
+    private var heroStateColor: Color {
+        colorScheme == .light
+            ? AppColors.stateBase(for: vm.readinessState)
+            : AppColors.stateTextStrong(for: vm.readinessState)
+    }
+
     private var isDayClosed: Bool {
         lastCheckOutDate == DailyCheckOut.todayKey()
     }
@@ -29,30 +54,46 @@ struct TodayHeroSection: View {
     private var activeHero: some View {
         VStack(alignment: .leading, spacing: DS.Spacing.sm) {
 
+            // Status override banner (sick / injured / on a break)
+            if vm.currentUserStatus != .active {
+                HStack(spacing: DS.Spacing.xs) {
+                    Image(systemName: vm.currentUserStatus.icon)
+                        .font(.system(size: 11, weight: .semibold))
+                    Text(vm.currentUserStatus.tagline.uppercased())
+                        .font(DS.Typography.label())
+                        .kerning(0.3)
+                }
+                .foregroundStyle(vm.currentUserStatus.color)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, 3)
+                .background(vm.currentUserStatus.color.opacity(0.12))
+                .clipShape(Capsule())
+            }
+
             // State chip
             Text(vm.readinessState.accessibilityLabel.uppercased())
                 .font(DS.Typography.label())
-                .foregroundStyle(DS.StateColor.primary(for: vm.readinessState))
+                .foregroundStyle(heroStateColor)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, 3)
-                .background(DS.StateColor.primary(for: vm.readinessState).opacity(0.12))
+                .background(heroStateColor.opacity(0.12))
                 .clipShape(Capsule())
 
             // Headline
             Text(headlineText)
                 .font(DS.Typography.hero())
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(heroTextColor)
 
             // Reassurance
             Text(reassuranceText)
                 .font(DS.Typography.body())
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(heroSubtextColor)
 
             // Reason (muted)
             if !vm.readinessReason.isEmpty {
                 Text(vm.readinessReason)
                     .font(DS.Typography.caption())
-                    .foregroundStyle(AppColors.textMuted)
+                    .foregroundStyle(heroMutedColor)
             }
 
             // Plan context
@@ -63,7 +104,7 @@ struct TodayHeroSection: View {
                     Text(vm.todayPlanLabel)
                         .font(DS.Typography.caption())
                 }
-                .foregroundStyle(AppColors.textMuted)
+                .foregroundStyle(heroMutedColor)
             }
 
             // See details
@@ -76,7 +117,7 @@ struct TodayHeroSection: View {
                     Image(systemName: "chevron.right")
                 }
                 .font(DS.Typography.caption().weight(.semibold))
-                .foregroundStyle(DS.StateColor.primary(for: vm.readinessState))
+                .foregroundStyle(heroStateColor)
             }
             .buttonStyle(.plain)
             .padding(.top, 2)
@@ -89,12 +130,15 @@ struct TodayHeroSection: View {
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .background(DS.Background.card)
+        .background(heroBg)
+        .background(AppColors.brandPrimary.opacity(0.08))
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
         .overlay(
             RoundedRectangle(cornerRadius: DS.Corner.card)
-                .strokeBorder(DS.Border.color, lineWidth: 1)
+                .strokeBorder(AppColors.stateBase(for: vm.readinessState).opacity(0.4), lineWidth: 1)
         )
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, y: DS.Shadow.y)
     }
 
     // MARK: - Closed hero (after evening check-out)
@@ -107,20 +151,20 @@ struct TodayHeroSection: View {
             // Badge
             Text("DAY CLOSED")
                 .font(DS.Typography.label())
-                .foregroundStyle(AppColors.greenText)
+                .foregroundStyle(AppColors.brandPrimary)
                 .padding(.horizontal, DS.Spacing.sm)
                 .padding(.vertical, 3)
-                .background(AppColors.greenText.opacity(0.12))
+                .background(AppColors.brandPrimary.opacity(0.12))
                 .clipShape(Capsule())
 
             // Affirmation
             Text(checkOut?.affirmationTitle ?? lastCheckOutMessage)
                 .font(DS.Typography.hero())
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(heroTextColor)
 
             Text(checkOut?.affirmationBody ?? "Rest well tonight.")
                 .font(DS.Typography.body())
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(heroSubtextColor)
 
             // Mini stats — single row
             if let co = checkOut, co.steps > 0 || co.proteinConsumed > 0 {
@@ -155,17 +199,25 @@ struct TodayHeroSection: View {
                 Image(systemName: "moon.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(AppColors.dataSleep)
+                Image(systemName: tomorrowType.icon)
+                    .font(.system(size: 11))
+                    .foregroundStyle(tomorrowType.color)
                 Text("Tomorrow · \(tomorrowTypeLabel)")
                     .font(DS.Typography.caption())
-                    .foregroundStyle(AppColors.textMuted)
+                    .foregroundStyle(heroMutedColor)
             }
         }
         .frame(maxWidth: .infinity, alignment: .leading)
         .padding(DS.Spacing.lg)
-        .background(
+        .background(heroBg)
+        .background(AppColors.brandPrimary.opacity(0.10))
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .overlay(
             RoundedRectangle(cornerRadius: DS.Corner.card)
-                .fill(AppColors.greenBase.opacity(0.08))
+                .strokeBorder(AppColors.brandPrimary.opacity(0.3), lineWidth: 1)
         )
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, y: DS.Shadow.y)
     }
 
     @ViewBuilder
@@ -181,7 +233,7 @@ struct TodayHeroSection: View {
             }
             Text(value)
                 .font(.system(size: 12, weight: .semibold, design: .rounded))
-                .foregroundStyle(hit ? AppColors.textPrimary : AppColors.textMuted)
+                .foregroundStyle(hit ? heroTextColor : heroMutedColor)
         }
     }
 
@@ -204,19 +256,26 @@ struct TodayHeroSection: View {
     // MARK: - CTA stack
 
     private var ctaStack: some View {
-        VStack(spacing: DS.Spacing.sm) {
-            PrimaryCTAButton(
-                label:  vm.recommendedAction.ctaLabel,
-                state:  vm.readinessState,
-                action: { vm.completeAction() }
-            )
-            Button {
-                vm.showingScanner = true
-                Haptics.impact(.light)
-            } label: {
-                Label("Log a meal", systemImage: "camera.viewfinder")
+        HStack(spacing: DS.Spacing.sm) {
+            Button { primaryCTAAction() } label: {
+                Label(primaryCTALabel, systemImage: primaryCTAIcon)
                     .font(.system(size: 15, weight: .semibold))
-                    .foregroundStyle(AppColors.brandPrimary)
+                    .foregroundStyle(heroStateColor)
+                    .frame(maxWidth: .infinity)
+                    .padding(.vertical, DS.Spacing.sm)
+                    .clipShape(Capsule())
+                    .overlay(Capsule().strokeBorder(AppColors.border, lineWidth: 1))
+            }
+            .buttonStyle(.plain)
+            .sheet(isPresented: $showMobility)  { RecoveryWorkoutView() }
+            .sheet(isPresented: $showBreathing) { BreathingExerciseView() }
+
+            Button {
+                secondaryCTAAction()
+            } label: {
+                Label(secondaryCTALabel, systemImage: secondaryCTAIcon)
+                    .font(.system(size: 15, weight: .semibold))
+                    .foregroundStyle(heroStateColor)
                     .frame(maxWidth: .infinity)
                     .padding(.vertical, DS.Spacing.sm)
                     .clipShape(Capsule())
@@ -226,35 +285,142 @@ struct TodayHeroSection: View {
         }
     }
 
-    // MARK: - Tomorrow (for closed hero)
+    // MARK: - Contextual CTA logic
 
-    private var tomorrowLetter: String {
-        let parts = weeklyPlan.components(separatedBy: ",")
-        guard parts.count == 7 else { return "W" }
-        let weekday = Calendar.current.component(.weekday, from: Date())
-        let todayIndex = (weekday - 2 + 7) % 7
-        return parts[(todayIndex + 1) % 7]
-    }
+    /// Hour of day used for time-aware copy (0–23).
+    private var currentHour: Int { Calendar.current.component(.hour, from: Date()) }
 
-    private var tomorrowTypeLabel: String {
-        switch tomorrowLetter {
-        case "W": return "Train day"
-        case "L": return "Light session"
-        default:  return "Rest day"
+    private var primaryCTALabel: String {
+        // Status overrides
+        switch vm.currentUserStatus {
+        case .sick:    return "Rest today"
+        case .injured: return "Start Mobility"
+        case .onBreak: return "Breathe & relax"
+        case .active:  break
+        }
+        // Time-of-day context for rest-day readiness
+        if vm.readinessState == .red {
+            return currentHour < 14 ? "Easy walk" : "Breathe & relax"
+        }
+        switch vm.todayPlanType {
+        case .strength: return "Start Workout"
+        case .run:      return "Go for a run"
+        case .walk:     return "Take a walk"
+        case .mobility: return "Start Mobility"
+        case .rest:     return currentHour < 20 ? "Quick mobility" : "Breathe & relax"
         }
     }
+
+    private var primaryCTAIcon: String {
+        switch vm.currentUserStatus {
+        case .sick:    return "moon.fill"
+        case .injured: return "figure.flexibility"
+        case .onBreak: return "wind"
+        case .active:  break
+        }
+        if vm.readinessState == .red {
+            return currentHour < 14 ? "figure.walk" : "wind"
+        }
+        return vm.todayPlanType.icon
+    }
+
+    private var secondaryCTALabel: String {
+        // If it's evening, promote meal log
+        if currentHour >= 18 { return "Log a meal" }
+        // If nutrition is likely behind, nudge toward food
+        if vm.collapsedStats.nutrition.kcalConsumed < vm.collapsedStats.nutrition.kcalTarget / 3
+            && currentHour >= 12 {
+            return "Log a meal"
+        }
+        // Default
+        return "Log a meal"
+    }
+
+    private var secondaryCTAIcon: String {
+        return "camera.viewfinder"
+    }
+
+    private func primaryCTAAction() {
+        switch vm.currentUserStatus {
+        case .sick:
+            showBreathing = true
+            Haptics.impact(.light)
+        case .injured:
+            showMobility = true
+            Haptics.impact(.light)
+        case .onBreak:
+            showBreathing = true
+            Haptics.impact(.light)
+        case .active:
+            if vm.readinessState == .red {
+                if currentHour < 14 {
+                    NotificationCenter.default.post(name: .switchToWorkoutTab, object: nil)
+                } else {
+                    showBreathing = true
+                }
+            } else {
+                switch vm.todayPlanType {
+                case .strength, .run, .walk:
+                    NotificationCenter.default.post(name: .switchToWorkoutTab, object: nil)
+                    Haptics.impact(.medium)
+                case .mobility:
+                    showMobility = true
+                    Haptics.impact(.light)
+                case .rest:
+                    if currentHour < 20 {
+                        showMobility = true
+                    } else {
+                        showBreathing = true
+                    }
+                    Haptics.impact(.light)
+                }
+            }
+        }
+    }
+
+    private func secondaryCTAAction() {
+        vm.showingScanner = true
+        Haptics.impact(.light)
+    }
+
+    // MARK: - Tomorrow (for closed hero)
+
+    private var tomorrowType: PlanDayType {
+        let weekday    = Calendar.current.component(.weekday, from: Date())
+        let todayIndex = (weekday - 2 + 7) % 7
+        return PlanDayType.week(from: weeklyPlan)[(todayIndex + 1) % 7]
+    }
+
+    private var tomorrowTypeLabel: String { tomorrowType.label }
 
     // MARK: - Copy
 
     private var headlineText: String {
-        switch vm.readinessState {
-        case .green:  return "You're ready.\nGo make it count."
-        case .yellow: return "Go lighter today.\nKeep the momentum."
-        case .red:    return "Rest today.\nLet your body rebuild."
+        // Status overrides take priority over biometric readiness copy
+        switch vm.currentUserStatus {
+        case .sick:    return "Take it easy today.\nYour body is fighting."
+        case .injured: return "Protect your recovery.\nModified movement only."
+        case .onBreak: return "Enjoy your break.\nYou've earned the rest."
+        case .active:  break
+        }
+        switch (vm.readinessState, vm.todayPlanType) {
+        case (.green, .strength): return "You're ready.\nGo make it count."
+        case (.green, .run):      return "You're ready.\nTime to run."
+        case (.green, .walk):     return "You're ready.\nGet those steps in."
+        case (.green, .mobility): return "You're ready.\nMove and stretch."
+        case (.green, .rest):     return "Rest day planned.\nYour body will thank you."
+        case (.yellow, _):        return "Go lighter today.\nKeep the momentum."
+        case (.red, _):           return "Rest today.\nLet your body rebuild."
         }
     }
 
     private var reassuranceText: String {
+        switch vm.currentUserStatus {
+        case .sick:    return "Skip training — rest is the best medicine."
+        case .injured: return "Listen to your body. Gentle movement only."
+        case .onBreak: return "Consistency matters. Breaks are part of the plan."
+        case .active:  break
+        }
         switch vm.readinessState {
         case .green:  return "Body primed, schedule clear. Push hard."
         case .yellow: return "Lighter days are how progress sticks."

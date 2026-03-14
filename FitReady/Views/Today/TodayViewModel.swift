@@ -15,6 +15,9 @@ final class TodayViewModel: ObservableObject {
     @Published var collapsedStats:    CollapsedStats
 
     @Published var todayPlanLabel: String = ""
+    @Published var todayPlanType: PlanDayType = .strength
+
+    @Published var tdee: Int = 0
 
     @Published var expandedMetricsVisible: Bool = false
     @Published var detailsSheetVisible:    Bool = false
@@ -26,6 +29,8 @@ final class TodayViewModel: ObservableObject {
     @Published var todaySleep:  Double? = nil
     @Published var baselineHRV: Double? = nil
     @Published var baselineRHR: Double? = nil
+    @Published var hrvZ:        Double? = nil
+    @Published var rhrDelta:    Double? = nil
     @Published var lastUpdated: Date?   = nil
 
     // MARK: - Init (mock)
@@ -45,29 +50,31 @@ final class TodayViewModel: ObservableObject {
 
     /// Derives all published state from a live ReadinessScore + HealthKitManager data.
     /// `mealTotals` provides scanned-meal fallback when HealthKit nutrition is unavailable.
-    /// `planLetter` is today's letter from `weeklyPlan` ("W"/"L"/"R"); worst-case blending applied.
+    /// `planType` is today's planned activity type from `weeklyPlan`.
     /// `weeklySteps` powers the real momentum ring.
+    /// Also published so TodayHeroSection can adapt copy to the user's self-reported status.
+    @Published var currentUserStatus: UserStatus = .active
+
     func update(from score: ReadinessScore,
                 healthKit: HealthKitManager,
                 macroTargets: MacroTargets?,
                 mealTotals: (kcal: Double?, protein: Double?, fat: Double?, carbs: Double?)? = nil,
-                planLetter: String = "W",
-                weeklySteps: [Date: Double] = [:]) {
+                planType: PlanDayType = .strength,
+                weeklySteps: [Date: Double] = [:],
+                userStatus: UserStatus = .active) {
 
-        let state: ReadinessState
+        currentUserStatus = userStatus
+
+        // Derive base state from biometrics, then apply user status override
+        let baseState: ReadinessState
         switch score.verdict {
-        case .ready: state = .green
-        case .light: state = .yellow
-        case .rest:  state = .red
+        case .ready: baseState = .green
+        case .light: baseState = .yellow
+        case .rest:  baseState = .red
         }
+        let state = userStatus.readinessOverride ?? baseState
 
-        let planLabelText: String
-        switch planLetter {
-        case "W": planLabelText = "Today's plan: Train day"
-        case "L": planLabelText = "Today's plan: Light session"
-        case "R": planLabelText = "Today's plan: Rest day"
-        default:  planLabelText = ""
-        }
+        let planLabelText = "Today's plan: \(planType.label)"
 
         // Priority: HealthKit > scanned meals > 0
         let nutrition = NutritionSummary(
@@ -88,6 +95,7 @@ final class TodayViewModel: ObservableObject {
 
         self.readinessState    = state
         self.todayPlanLabel    = planLabelText
+        self.todayPlanType     = planType
         self.readinessReason   = makeReason(score: score)
         self.recommendedAction = TodayMockData.makePlan(for: state)
         self.secondaryActions  = TodayMockData.makeSecondary(for: state)
@@ -99,12 +107,17 @@ final class TodayViewModel: ObservableObject {
             nutrition:        nutrition,
             activity:         activity
         )
+
+
+        self.tdee          = macroTargets?.tdee ?? 0
         self.momentum      = makeMomentum(weeklySteps: weeklySteps)
         self.todayHRV    = score.todayHRV
         self.todayRHR    = score.todayRHR
         self.todaySleep  = score.todaySleep
         self.baselineHRV = score.baselineHRV
         self.baselineRHR = score.baselineRHR
+        self.hrvZ        = score.hrvZ
+        self.rhrDelta    = score.rhrDelta
         self.lastUpdated = healthKit.lastLoadedAt
     }
 
@@ -118,17 +131,17 @@ final class TodayViewModel: ObservableObject {
 
     private func makeReason(score: ReadinessScore) -> String {
         var parts: [String] = []
-        if let hrv = score.todayHRV, let base = score.baselineHRV, base > 0 {
-            let ratio = hrv / base
-            if ratio >= 0.95    { parts.append("HRV strong") }
-            else if ratio >= 0.80 { parts.append("HRV slightly low") }
-            else                  { parts.append("HRV low") }
+        if let z = score.hrvZ {
+            if z > 0.5        { parts.append("HRV above your norm") }
+            else if z > -0.5  { parts.append("HRV within your norm") }
+            else if z > -1.5  { parts.append("HRV slightly low") }
+            else              { parts.append("HRV well below norm") }
         }
-        if let rhr = score.todayRHR, let base = score.baselineRHR, base > 0 {
-            let ratio = rhr / base
-            if ratio <= 1.03     { parts.append("heart rate steady") }
-            else if ratio <= 1.08 { parts.append("heart rate slightly elevated") }
-            else                   { parts.append("heart rate elevated") }
+        if let delta = score.rhrDelta {
+            if delta < 0      { parts.append("RHR below baseline") }
+            else if delta < 3 { parts.append("RHR normal") }
+            else if delta < 5 { parts.append("RHR slightly elevated") }
+            else              { parts.append("RHR elevated") }
         }
         if let sleep = score.todaySleep {
             if sleep >= 7.5    { parts.append("sleep solid") }
