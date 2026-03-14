@@ -577,6 +577,26 @@ struct WeeklyProgressHeroCard: View {
     @EnvironmentObject private var healthKit: HealthKitManager
     @AppStorage("weeklyPlan") private var weeklyPlan: String = "W,L,W,L,W,R,R"
 
+    @Environment(\.colorScheme) private var colorScheme
+
+    // MARK: - Hero color helpers (mirrors TodayHeroSection light-mode treatment)
+
+    /// In light mode the hero card always renders on a dark forest-green surface —
+    /// so text must be forced light regardless of the system color scheme.
+    private var heroTextColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2") : AppColors.textPrimary
+    }
+    private var heroSubtextColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2").opacity(0.75) : AppColors.textSecondary
+    }
+    private var heroMutedColor: Color {
+        colorScheme == .light ? Color(hex: "F2F2F2").opacity(0.55) : AppColors.textMuted
+    }
+    /// Opaque deep-green overlay only in light mode (dark mode: .clear lets the material show through)
+    private var heroBg: Color {
+        colorScheme == .light ? Color(hex: "20422E") : .clear
+    }
+
     // MARK: Derived — workouts
 
     private var workoutsThisWeek: Int {
@@ -639,42 +659,58 @@ struct WeeklyProgressHeroCard: View {
     // MARK: Body
 
     var body: some View {
-        SoftCard {
-            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
-                // Week label
-                Text("THIS WEEK")
-                    .font(DS.Typography.label())
-                    .foregroundStyle(AppColors.textSecondary)
-                    .kerning(0.5)
+            // Week label chip — mirrors TodayHeroSection readiness chip style
+            Text("THIS WEEK")
+                .font(DS.Typography.label())
+                .foregroundStyle(AppColors.brandPrimary)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, 3)
+                .background(AppColors.brandPrimary.opacity(0.12))
+                .clipShape(Capsule())
 
-                // Stat blocks
-                HStack(spacing: 0) {
-                    statBlock(
-                        value: "\(workoutsThisWeek) / \(plannedWorkoutDays)",
-                        label: "Workouts"
-                    )
-                    Divider().frame(height: 36)
-                    statBlock(
-                        value: "\(weeklyKcalTotal)",
-                        label: "Active kcal"
-                    )
-                    Divider().frame(height: 36)
-                    statBlock(
-                        value: stepsFormatted(weeklyStepsTotal),
-                        label: "Steps"
-                    )
-                }
+            // Stat blocks
+            HStack(spacing: 0) {
+                statBlock(
+                    value: "\(workoutsThisWeek) / \(plannedWorkoutDays)",
+                    label: "Workouts"
+                )
+                Divider().frame(height: 36).opacity(0.3)
+                statBlock(
+                    value: "\(weeklyKcalTotal)",
+                    label: "Active kcal"
+                )
+                Divider().frame(height: 36).opacity(0.3)
+                statBlock(
+                    value: stepsFormatted(weeklyStepsTotal),
+                    label: "Steps"
+                )
+            }
 
-                // 7-day dot strip
-                HStack(spacing: 0) {
-                    ForEach(Array(dayInfos.enumerated()), id: \.offset) { _, day in
-                        dayDot(day)
-                            .frame(maxWidth: .infinity)
-                    }
+            // 7-day dot strip
+            HStack(spacing: 0) {
+                ForEach(Array(dayInfos.enumerated()), id: \.offset) { _, day in
+                    dayDot(day)
+                        .frame(maxWidth: .infinity)
                 }
             }
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
+        .padding(DS.Spacing.lg)
+        // Three-layer background — matches TodayHeroSection exactly:
+        //   1. heroBg: opaque dark green in light mode, clear in dark
+        //   2. brandPrimary @ 8% glass tint (GlassTintGreen — Liquid Glass spec)
+        //   3. ultraThinMaterial for frosted depth
+        .background(heroBg)
+        .background(AppColors.brandPrimary.opacity(0.08))
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .overlay(
+            RoundedRectangle(cornerRadius: DS.Corner.card)
+                .strokeBorder(AppColors.brandPrimary.opacity(0.4), lineWidth: 1)
+        )
+        .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, y: DS.Shadow.y)
     }
 
     // MARK: Sub-views
@@ -684,12 +720,12 @@ struct WeeklyProgressHeroCard: View {
         VStack(spacing: 3) {
             Text(value)
                 .font(DS.Typography.hero())
-                .foregroundStyle(AppColors.textPrimary)
+                .foregroundStyle(heroTextColor)
                 .minimumScaleFactor(0.6)
                 .lineLimit(1)
             Text(label)
                 .font(DS.Typography.label())
-                .foregroundStyle(AppColors.textSecondary)
+                .foregroundStyle(heroSubtextColor)
         }
         .frame(maxWidth: .infinity)
     }
@@ -699,7 +735,7 @@ struct WeeklyProgressHeroCard: View {
         VStack(spacing: 4) {
             Text(day.letter)
                 .font(.system(size: 10, weight: day.isToday ? .bold : .regular))
-                .foregroundStyle(day.isToday ? AppColors.brandForeground : AppColors.textMuted)
+                .foregroundStyle(day.isToday ? AppColors.brandPrimary : heroMutedColor)
 
             ZStack {
                 if day.isToday {
@@ -718,7 +754,7 @@ struct WeeklyProgressHeroCard: View {
                 } else {
                     // Rest / future: empty
                     Circle()
-                        .strokeBorder(AppColors.metricInactive, lineWidth: 1.5)
+                        .strokeBorder(heroMutedColor.opacity(0.5), lineWidth: 1.5)
                         .frame(width: 10, height: 10)
                 }
             }
