@@ -1,4 +1,26 @@
 import SwiftUI
+import HealthKit
+
+// MARK: - Unified timeline entry
+
+private enum TimelineEntry: Identifiable {
+    case meal(MealEntry)
+    case workout(HKWorkout)
+
+    var id: String {
+        switch self {
+        case .meal(let m):    return m.id.uuidString
+        case .workout(let w): return w.uuid.uuidString
+        }
+    }
+
+    var timestamp: Date {
+        switch self {
+        case .meal(let m):    return m.timestamp
+        case .workout(let w): return w.startDate
+        }
+    }
+}
 
 struct FoodView: View {
 
@@ -104,6 +126,13 @@ struct FoodView: View {
 
     private var showManualEntry: Bool {
         healthKit.todayKcal == nil
+    }
+
+    /// All today's meals and workouts merged and sorted chronologically.
+    private var todayTimelineEntries: [TimelineEntry] {
+        let mealEntries = todayMeals.map { TimelineEntry.meal($0) }
+        let workoutEntries = healthKit.todayWorkouts.map { TimelineEntry.workout($0) }
+        return (mealEntries + workoutEntries).sorted { $0.timestamp < $1.timestamp }
     }
 
     private let macroColors: [(Color, String)] = [
@@ -355,8 +384,8 @@ struct FoodView: View {
                 .buttonStyle(.plain)
             }
 
-            // Meal timeline
-            if todayMeals.isEmpty {
+            // Meal + workout timeline
+            if todayTimelineEntries.isEmpty {
                 HStack(spacing: DS.Spacing.sm) {
                     Image(systemName: "fork.knife.circle")
                         .font(.system(size: 20))
@@ -409,22 +438,20 @@ struct FoodView: View {
         .shadow(color: AppColors.shadowColor, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
-    /// Visual timeline of today's meals, sorted by timestamp.
+    /// Visual timeline of today's meals and workouts, sorted chronologically.
     @ViewBuilder
     private var mealTimeline: some View {
-        let sorted = todayMeals.sorted { $0.timestamp < $1.timestamp }
+        let entries = todayTimelineEntries
         VStack(alignment: .leading, spacing: 0) {
-            ForEach(Array(sorted.enumerated()), id: \.element.id) { idx, meal in
+            ForEach(Array(entries.enumerated()), id: \.element.id) { idx, entry in
                 HStack(alignment: .top, spacing: DS.Spacing.sm) {
 
                     // Timeline rail
                     VStack(spacing: 0) {
-                        Circle()
-                            .fill(mealDotColor(meal))
-                            .frame(width: 10, height: 10)
+                        timelineRailIcon(entry: entry)
                             .padding(.top, 5)
 
-                        if idx < sorted.count - 1 {
+                        if idx < entries.count - 1 {
                             Rectangle()
                                 .fill(DS.Border.color)
                                 .frame(width: 1)
@@ -432,47 +459,96 @@ struct FoodView: View {
                                 .padding(.vertical, 2)
                         }
                     }
-                    .frame(width: 10)
+                    .frame(width: 32)
 
-                    // Meal card
-                    VStack(alignment: .leading, spacing: 2) {
-                        HStack(spacing: DS.Spacing.xs) {
-                            Text(meal.timestamp.formatted(.dateTime.hour().minute()))
-                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
-                                .foregroundStyle(AppColors.textMuted)
-
-                            Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
-                                .font(.system(size: 9))
-                                .foregroundStyle(AppColors.textMuted)
-                        }
-
-                        Text(meal.name)
-                            .font(.system(size: 14, weight: .semibold))
-                            .foregroundStyle(AppColors.textPrimary)
-                            .lineLimit(1)
-
-                        HStack(spacing: DS.Spacing.sm) {
-                            mealMacroChip(value: Int(meal.kcal),      unit: "kcal", color: AppColors.dataCalories)
-                            mealMacroChip(value: Int(meal.proteinG),  unit: "P",    color: AppColors.dataProtein)
-                            mealMacroChip(value: Int(meal.carbsG),    unit: "C",    color: AppColors.dataCarbs)
-                            mealMacroChip(value: Int(meal.fatG),      unit: "F",    color: AppColors.dataFat)
-
-                            Spacer()
-
-                            Button {
-                                deleteMealEntry(id: meal.id)
-                            } label: {
-                                Image(systemName: "trash")
-                                    .font(.system(size: 11))
-                                    .foregroundStyle(AppColors.textMuted)
-                            }
-                            .buttonStyle(.plain)
-                        }
+                    // Row content
+                    switch entry {
+                    case .meal(let meal):
+                        mealRow(meal: meal, isLast: idx == entries.count - 1)
+                    case .workout(let workout):
+                        workoutRow(workout: workout, isLast: idx == entries.count - 1)
                     }
-                    .padding(.bottom, idx < sorted.count - 1 ? DS.Spacing.md : 0)
                 }
             }
         }
+    }
+
+    @ViewBuilder
+    private func timelineRailIcon(entry: TimelineEntry) -> some View {
+        switch entry {
+        case .meal(let meal):
+            Circle()
+                .fill(mealDotColor(meal))
+                .frame(width: 10, height: 10)
+                .padding(.leading, 11) // centre the dot within the 32pt frame
+        case .workout(let workout):
+            ZStack {
+                Circle()
+                    .fill(AppColors.brandMuted)
+                    .frame(width: 28, height: 28)
+                Image(systemName: workoutSymbol(for: workout.workoutActivityType))
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppColors.brandPrimary)
+            }
+        }
+    }
+
+    @ViewBuilder
+    private func mealRow(meal: MealEntry, isLast: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            HStack(spacing: DS.Spacing.xs) {
+                Text(meal.timestamp.formatted(.dateTime.hour().minute()))
+                    .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                    .foregroundStyle(AppColors.textMuted)
+
+                Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
+                    .font(.system(size: 9))
+                    .foregroundStyle(AppColors.textMuted)
+            }
+
+            Text(meal.name)
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(1)
+
+            HStack(spacing: DS.Spacing.sm) {
+                mealMacroChip(value: Int(meal.kcal),      unit: "kcal", color: AppColors.dataCalories)
+                mealMacroChip(value: Int(meal.proteinG),  unit: "P",    color: AppColors.dataProtein)
+                mealMacroChip(value: Int(meal.carbsG),    unit: "C",    color: AppColors.dataCarbs)
+                mealMacroChip(value: Int(meal.fatG),      unit: "F",    color: AppColors.dataFat)
+
+                Spacer()
+
+                Button {
+                    deleteMealEntry(id: meal.id)
+                } label: {
+                    Image(systemName: "trash")
+                        .font(.system(size: 11))
+                        .foregroundStyle(AppColors.textMuted)
+                }
+                .buttonStyle(.plain)
+            }
+        }
+        .padding(.bottom, isLast ? 0 : DS.Spacing.md)
+    }
+
+    @ViewBuilder
+    private func workoutRow(workout: HKWorkout, isLast: Bool) -> some View {
+        VStack(alignment: .leading, spacing: 2) {
+            Text(workout.startDate.formatted(.dateTime.hour().minute()))
+                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                .foregroundStyle(AppColors.textMuted)
+
+            Text(workoutTypeName(for: workout.workoutActivityType))
+                .font(.system(size: 14, weight: .semibold))
+                .foregroundStyle(AppColors.textPrimary)
+                .lineLimit(1)
+
+            Text(workoutSubtitle(for: workout))
+                .font(DS.Typography.caption())
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .padding(.bottom, isLast ? 0 : DS.Spacing.md)
     }
 
     private func mealDotColor(_ meal: MealEntry) -> Color {
@@ -481,6 +557,54 @@ struct FoodView: View {
         case "manual": return AppColors.textSecondary
         default:       return AppColors.textMuted
         }
+    }
+
+    private func workoutSymbol(for type: HKWorkoutActivityType) -> String {
+        switch type {
+        case .running:                                    return "figure.run"
+        case .walking:                                    return "figure.walk"
+        case .cycling:                                    return "figure.outdoor.cycle"
+        case .traditionalStrengthTraining,
+             .functionalStrengthTraining,
+             .coreTraining,
+             .crossTraining:                             return "figure.strengthtraining.traditional"
+        default:                                         return "bolt.heart"
+        }
+    }
+
+    private func workoutTypeName(for type: HKWorkoutActivityType) -> String {
+        switch type {
+        case .running:                          return "Run"
+        case .walking:                          return "Walk"
+        case .cycling:                          return "Cycling"
+        case .swimming:                         return "Swimming"
+        case .yoga:                             return "Yoga"
+        case .hiking:                           return "Hike"
+        case .traditionalStrengthTraining:      return "Strength Training"
+        case .functionalStrengthTraining:       return "Functional Strength"
+        case .coreTraining:                     return "Core Training"
+        case .crossTraining:                    return "Cross Training"
+        case .highIntensityIntervalTraining:    return "HIIT"
+        case .elliptical:                       return "Elliptical"
+        case .rowing:                           return "Rowing"
+        case .stairClimbing:                    return "Stair Climbing"
+        case .pilates:                          return "Pilates"
+        case .dance:                            return "Dance"
+        case .soccer:                           return "Football"
+        case .basketball:                       return "Basketball"
+        case .tennis:                           return "Tennis"
+        default:                                return "Workout"
+        }
+    }
+
+    private func workoutSubtitle(for workout: HKWorkout) -> String {
+        let minutes = Int(workout.duration / 60)
+        let durationText = "\(minutes) min"
+        if let kcalQuantity = workout.totalEnergyBurned {
+            let kcal = Int(kcalQuantity.doubleValue(for: .kilocalorie()))
+            if kcal > 0 { return "\(durationText) · \(kcal) kcal" }
+        }
+        return durationText
     }
 
     @ViewBuilder

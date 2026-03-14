@@ -24,6 +24,8 @@ final class HealthKitManager: ObservableObject {
     @Published var weeklyActiveKcal: [Date: Double] = [:]
     /// Most recent running pace from HealthKit (seconds per km). nil = no data or unavailable.
     @Published var recentRunningPaceSecsPerKm: Double? = nil
+    /// Today's completed workouts, sorted by startDate ascending.
+    @Published var todayWorkouts: [HKWorkout] = []
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
@@ -66,6 +68,8 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)        { types.insert(t) }
         // Running speed — for auto-populating pace in IntervalRunSheet (iOS 16+)
         if let t = HKObjectType.quantityType(forIdentifier: .runningSpeed)              { types.insert(t) }
+        // Workouts — for displaying today's activity on the Food page timeline
+        types.insert(HKObjectType.workoutType())
         return types
     }()
 
@@ -159,6 +163,9 @@ final class HealthKitManager: ObservableObject {
 
         // Running pace — most recent sample from the past 30 days
         recentRunningPaceSecsPerKm = await fetchRecentRunningPace()
+
+        // Today's workouts — displayed in the Food page day timeline
+        todayWorkouts = await fetchTodayWorkouts()
 
         lastLoadedAt = Date()
     }
@@ -338,6 +345,26 @@ final class HealthKitManager: ObservableObject {
                 guard speedMps > 0 else { continuation.resume(returning: nil); return }
                 let secsPerKm = 1000.0 / speedMps
                 continuation.resume(returning: secsPerKm)
+            }
+            self.store.execute(query)
+        }
+    }
+
+    /// Fetches all completed workouts recorded today (midnight → now), sorted by startDate ascending.
+    func fetchTodayWorkouts() async -> [HKWorkout] {
+        let cal = Calendar.current
+        let now = Date()
+        let todayStart = cal.startOfDay(for: now)
+        let predicate = HKQuery.predicateForSamples(withStart: todayStart, end: now, options: .strictStartDate)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: HKObjectType.workoutType(),
+                predicate: predicate,
+                limit: HKObjectQueryNoLimit,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierStartDate, ascending: true)]
+            ) { _, samples, _ in
+                let workouts = (samples as? [HKWorkout]) ?? []
+                continuation.resume(returning: workouts)
             }
             self.store.execute(query)
         }
