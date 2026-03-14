@@ -2,6 +2,19 @@
 
 ---
 
+## 2026-03-14 — Workouts on Food page day timeline
+
+### Added
+
+- **Workout entries in Food page timeline** — Today's completed HealthKit workouts (`HKWorkout`) are now fetched and interleaved with meal entries in a unified chronological timeline. Workout rows display a `brandMuted`-coloured circle with an activity-specific SF Symbol (run, walk, cycle, strength, etc.), the workout type name, and a subtitle showing duration in minutes and kcal burned (when available). `HealthKitManager` now requests `HKObjectType.workoutType()` read permission and publishes `todayWorkouts: [HKWorkout]` — fetched on every `loadAll()` call.
+
+### Notes
+
+- `TimelineEntry` enum (`case meal(MealEntry)`, `case workout(HKWorkout)`) is private to `FoodView.swift` and drives the merged sort. No changes to meal delete or macro chips.
+- Workout permission is added to the existing `readTypes` set; no new authorization prompt is triggered if the user already granted HealthKit access (iOS will lazily surface the new type on first launch).
+
+---
+
 ## 2026-03-14 — Set Status sheet redesign + Insights weekly hero card
 
 ### Changed
