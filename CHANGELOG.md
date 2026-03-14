@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-03-14 — WorkoutSummarySheet uses real body weight for kcal estimate
+
+### Changed
+
+- **Accurate kcal estimate in WorkoutSummarySheet** — The "Est. energy burned" range now uses `HealthKitManager.currentWeightKg` (the most recent body-mass sample from Apple Health) instead of a hardcoded 75 kg placeholder. Falls back to 75 kg when no weight is recorded in Health. The calorie-note footer dynamically explains which source was used, so users always understand the accuracy level of the displayed figure.
+
+---
+
 ## 2026-03-14 — Fix energy burned discrepancy between Today and Insights pages
 
 ### Fixed

@@ -8,6 +8,7 @@ struct WorkoutSummarySheet: View {
     let program: WorkoutProgram
 
     @Environment(\.dismiss) private var dismiss
+    @EnvironmentObject private var healthKit: HealthKitManager
 
     // MARK: - Derived
 
@@ -26,18 +27,22 @@ struct WorkoutSummarySheet: View {
     }
 
     /// Rough estimated kcal burned.
-    /// Formula: MET × body-weight-est × hours.
-    /// MET ≈ 5 for moderate weightlifting / 8 for running. No body-weight available here so
-    /// we use a 75 kg placeholder and show a range band instead of an exact number.
+    /// Formula: MET × body-weight × hours.
+    /// MET ≈ 4.5–6.5 for moderate weightlifting, 7.0–9.0 for running.
+    /// Uses the most recent weight from HealthKit, falling back to 75 kg if unavailable.
     private var estimatedKcalRange: String {
-        let hours  = Double(session.durationSeconds) / 3600.0
-        let isRun  = program.planType == .run
+        let hours      = Double(session.durationSeconds) / 3600.0
+        let weightKg   = healthKit.currentWeightKg ?? 75.0
+        let isRun      = program.planType == .run
         let metLow: Double  = isRun ? 7.0 : 4.5
         let metHigh: Double = isRun ? 9.0 : 6.5
-        let low  = Int(metLow  * 75 * hours)
-        let high = Int(metHigh * 75 * hours)
+        let low  = Int(metLow  * weightKg * hours)
+        let high = Int(metHigh * weightKg * hours)
         return "\(low)–\(high) kcal"
     }
+
+    /// Whether we fell back to the default weight because HealthKit had no value.
+    private var usingDefaultWeight: Bool { healthKit.currentWeightKg == nil }
 
     /// Progression badges: exercises where the user achieved a new set/rep target or weight.
     private var progressionHighlights: [String] {
@@ -145,7 +150,9 @@ struct WorkoutSummarySheet: View {
                             Image(systemName: "info.circle")
                                 .font(.system(size: 13))
                                 .foregroundStyle(AppColors.textMuted)
-                            Text("Energy estimate uses a 75 kg body-weight baseline. Log this workout in Apple Fitness for a personalised figure.")
+                            Text(usingDefaultWeight
+                                 ? "Energy estimate uses a 75 kg baseline (no weight found in Health). Log this workout in Apple Fitness for a personalised figure."
+                                 : "Energy estimate based on your current weight from Health. Log this workout in Apple Fitness for a more precise figure.")
                                 .font(DS.Typography.caption())
                                 .foregroundStyle(AppColors.textMuted)
                         }
@@ -241,5 +248,6 @@ struct WorkoutSummarySheet: View {
         ]
     )
     WorkoutSummarySheet(session: session, program: .pushDay)
+        .environmentObject(HealthKitManager())
         .preferredColorScheme(.dark)
 }
