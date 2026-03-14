@@ -5,24 +5,10 @@ struct SettingsView: View {
     @EnvironmentObject private var healthKit: HealthKitManager
 
     @AppStorage("anthropicAPIKey")       private var anthropicAPIKey: String = ""
-    @AppStorage("baselineDays")          private var baselineDays: Int = 7
-    @AppStorage("sleepTargetHours")      private var sleepTargetHours: Double = 7.5
-    @AppStorage("hrvGoodThreshold")      private var hrvGoodThreshold: Double = 0.95
-    @AppStorage("hrvNeutralThreshold")   private var hrvNeutralThreshold: Double = 0.80
-    @AppStorage("rhrGoodThreshold")      private var rhrGoodThreshold: Double = 1.03
-    @AppStorage("rhrNeutralThreshold")   private var rhrNeutralThreshold: Double = 1.08
+    @AppStorage("sleepTargetHours")      private var sleepTargetHours: Double = 8.0
 
     var body: some View {
         Form {
-                // MARK: Baseline
-                Section {
-                    Stepper("**\(baselineDays)** days", value: $baselineDays, in: 5...14)
-                } header: {
-                    Text("Baseline Window")
-                } footer: {
-                    Text("How many past days are used to calculate your personal averages.")
-                }
-
                 // MARK: Sleep
                 Section {
                     VStack(alignment: .leading, spacing: 10) {
@@ -42,58 +28,10 @@ struct SettingsView: View {
                     Text("Sleeping at or above this target contributes positively to your score.")
                 }
 
-                // MARK: HRV
-                Section {
-                    VStack(alignment: .leading, spacing: 14) {
-                        thresholdRow(
-                            label: "Good",
-                            description: "HRV ≥ \(Int(hrvGoodThreshold * 100))% of baseline",
-                            value: $hrvGoodThreshold,
-                            range: 0.80...1.00,
-                            color: AppColors.greenBase
-                        )
-                        thresholdRow(
-                            label: "Neutral",
-                            description: "HRV ≥ \(Int(hrvNeutralThreshold * 100))% of baseline",
-                            value: $hrvNeutralThreshold,
-                            range: 0.60...0.90,
-                            color: AppColors.amberBase
-                        )
-                    }
-                } header: {
-                    Text("HRV Thresholds")
-                } footer: {
-                    Text("How much your HRV can drop from your baseline before hurting your score.")
-                }
-
-                // MARK: RHR
-                Section {
-                    VStack(alignment: .leading, spacing: 14) {
-                        thresholdRow(
-                            label: "Good",
-                            description: "RHR ≤ +\(Int((rhrGoodThreshold - 1.0) * 100))% of baseline",
-                            value: $rhrGoodThreshold,
-                            range: 1.00...1.10,
-                            color: AppColors.greenBase
-                        )
-                        thresholdRow(
-                            label: "Neutral",
-                            description: "RHR ≤ +\(Int((rhrNeutralThreshold - 1.0) * 100))% of baseline",
-                            value: $rhrNeutralThreshold,
-                            range: 1.01...1.20,
-                            color: AppColors.amberBase
-                        )
-                    }
-                } header: {
-                    Text("Resting HR Thresholds")
-                } footer: {
-                    Text("How much your resting heart rate can rise above baseline before hurting your score.")
-                }
-
                 // MARK: Refresh
                 Section {
                     Button {
-                        Task { await healthKit.loadData(baselineDays: baselineDays) }
+                        Task { await healthKit.loadData() }
                     } label: {
                         HStack {
                             Label("Refresh Data", systemImage: "arrow.clockwise")
@@ -127,6 +65,33 @@ struct SettingsView: View {
                     Text("Used for meal photo analysis. Your key is stored locally and never shared.")
                 }
 
+                // MARK: Feedback
+                Section {
+                    Link(destination: URL(string: "https://fitready.canny.io")!) {
+                        HStack {
+                            Label("Submit feedback", systemImage: "bubble.left.and.bubble.right.fill")
+                            Spacer()
+                            Image(systemName: "arrow.up.right")
+                                .font(.caption)
+                                .foregroundStyle(AppColors.textMuted)
+                        }
+                    }
+                    .foregroundStyle(AppColors.textPrimary)
+                } header: {
+                    Text("Feedback")
+                } footer: {
+                    Text("Opens Canny in your browser — report bugs and vote on features.")
+                }
+
+                // MARK: Developer
+                Section {
+                    NavigationLink(destination: ErrorLogView()) {
+                        Label("Error log", systemImage: "exclamationmark.triangle.fill")
+                    }
+                } header: {
+                    Text("Developer")
+                }
+
                 // MARK: Reset
                 Section {
                     Button(role: .destructive) {
@@ -139,35 +104,7 @@ struct SettingsView: View {
         .navigationTitle("Settings")
     }
 
-    // MARK: - Helpers
-
-    @ViewBuilder
-    private func thresholdRow(
-        label: String,
-        description: String,
-        value: Binding<Double>,
-        range: ClosedRange<Double>,
-        color: Color
-    ) -> some View {
-        VStack(alignment: .leading, spacing: 6) {
-            HStack {
-                Text(label).font(.subheadline).fontWeight(.medium)
-                Spacer()
-                Text(description)
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textSecondary)
-                    .monospacedDigit()
-            }
-            Slider(value: value, in: range, step: 0.01).tint(color)
-        }
-    }
-
     private func resetToDefaults() {
-        baselineDays        = 7
-        sleepTargetHours    = 7.5
-        hrvGoodThreshold    = 0.95
-        hrvNeutralThreshold = 0.80
-        rhrGoodThreshold    = 1.03
-        rhrNeutralThreshold = 1.08
+        sleepTargetHours = 8.0
     }
 }
