@@ -406,7 +406,7 @@ struct FoodView: View {
         .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
         .overlay(RoundedRectangle(cornerRadius: DS.Corner.card).strokeBorder(DS.Border.color, lineWidth: 1))
-        .shadow(color: AppColors.shadowColor, radius: DS.Shadow.radius, x: 0, y: Int(DS.Shadow.y))
+        .shadow(color: AppColors.shadowColor, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
     }
 
     /// Visual timeline of today's meals, sorted by timestamp.
