@@ -2,6 +2,18 @@
 
 ---
 
+## 2026-03-14 — Profile page status icon fix + hero card status chip
+
+### Fixed
+
+- **Status row icon inconsistency** — Icon in the Status section row now uses `.weight(.medium)` (was `.regular`), `UserStatus.color` as foreground (was hardcoded `brandPrimary`), and `UserStatus.color.opacity(0.18)` as background (was `AppColors.raised`). Now matches the `rowContent` icon pattern used everywhere else on the page.
+
+### Added
+
+- **Status chip in hero card** — A small capsule chip (icon + label, `UserStatus.color.opacity(0.28)` background, `heroText` foreground) appears between the goal tagline and goal progress bar when `userStatus` is non-active (Sick / Injured / On a break). Invisible in the normal Active state so it adds no visual noise day-to-day.
+
+---
+
 ## 2026-03-14 — Workouts on Food page day timeline
 
 ### Added
