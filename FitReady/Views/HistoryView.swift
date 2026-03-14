@@ -85,6 +85,8 @@ struct InsightsView: View {
                 DS.Background.page.ignoresSafeArea()
                 ScrollView {
                     VStack(spacing: DS.Spacing.lg) {
+                        WeeklyProgressHeroCard()
+                            .environmentObject(healthKit)
                         goalProgressCard
                         thisWeekCard
                         energyBalanceCard
@@ -562,8 +564,171 @@ private struct InsightCard<Content: View>: View {
         }
         .padding(DS.Spacing.lg)
         .frame(maxWidth: .infinity, alignment: .leading)
-        .background(DS.Background.card)
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
         .shadow(color: DS.Shadow.color, radius: DS.Shadow.radius, x: 0, y: DS.Shadow.y)
+    }
+}
+
+// MARK: - Weekly progress hero card
+
+struct WeeklyProgressHeroCard: View {
+
+    @EnvironmentObject private var healthKit: HealthKitManager
+    @AppStorage("weeklyPlan") private var weeklyPlan: String = "W,L,W,L,W,R,R"
+
+    // MARK: Derived — workouts
+
+    private var workoutsThisWeek: Int {
+        let sessions = WorkoutStore.all()
+        let cal = Calendar.current
+        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: Date())?.start else { return 0 }
+        return sessions.filter { $0.date >= weekStart }.count
+    }
+
+    private var plannedWorkoutDays: Int {
+        PlanDayType.week(from: weeklyPlan).filter { $0.isActive }.count
+    }
+
+    // MARK: Derived — totals
+
+    private var weeklyStepsTotal: Int {
+        let base = Int(healthKit.weeklySteps.values.reduce(0, +))
+        if let today = healthKit.todaySteps {
+            // weeklySteps may already include today depending on HK query — use max to avoid doubling
+            let cal = Calendar.current
+            let todayKey = healthKit.weeklySteps.keys.first { cal.isDateInToday($0) }
+            if todayKey == nil { return base + Int(today) }
+        }
+        return base
+    }
+
+    private var weeklyKcalTotal: Int {
+        let base = Int(healthKit.weeklyActiveKcal.values.reduce(0, +))
+        if let today = healthKit.todayActiveKcal {
+            let cal = Calendar.current
+            let todayKey = healthKit.weeklyActiveKcal.keys.first { cal.isDateInToday($0) }
+            if todayKey == nil { return base + Int(today) }
+        }
+        return base
+    }
+
+    // MARK: Derived — day strip (Mon–Sun)
+
+    private struct DayInfo {
+        let letter: String
+        let isToday: Bool
+        let hasWorkout: Bool
+    }
+
+    private var dayInfos: [DayInfo] {
+        let cal = Calendar.current
+        let now = Date()
+        guard let weekStart = cal.dateInterval(of: .weekOfYear, for: now)?.start else { return [] }
+        let sessions = WorkoutStore.all()
+        let letters  = ["M", "T", "W", "T", "F", "S", "S"]
+        return (0..<7).map { offset in
+            let day     = cal.date(byAdding: .day, value: offset, to: weekStart)!
+            let isToday = cal.isDate(day, inSameDayAs: now)
+            // A workout day = any logged session on that calendar day
+            let hasWorkout = sessions.contains { cal.isDate($0.date, inSameDayAs: day) }
+            return DayInfo(letter: letters[offset], isToday: isToday, hasWorkout: hasWorkout)
+        }
+    }
+
+    // MARK: Body
+
+    var body: some View {
+        SoftCard {
+            VStack(alignment: .leading, spacing: DS.Spacing.md) {
+
+                // Week label
+                Text("THIS WEEK")
+                    .font(DS.Typography.label())
+                    .foregroundStyle(AppColors.textSecondary)
+                    .kerning(0.5)
+
+                // Stat blocks
+                HStack(spacing: 0) {
+                    statBlock(
+                        value: "\(workoutsThisWeek) / \(plannedWorkoutDays)",
+                        label: "Workouts"
+                    )
+                    Divider().frame(height: 36)
+                    statBlock(
+                        value: "\(weeklyKcalTotal)",
+                        label: "Active kcal"
+                    )
+                    Divider().frame(height: 36)
+                    statBlock(
+                        value: stepsFormatted(weeklyStepsTotal),
+                        label: "Steps"
+                    )
+                }
+
+                // 7-day dot strip
+                HStack(spacing: 0) {
+                    ForEach(Array(dayInfos.enumerated()), id: \.offset) { _, day in
+                        dayDot(day)
+                            .frame(maxWidth: .infinity)
+                    }
+                }
+            }
+        }
+    }
+
+    // MARK: Sub-views
+
+    @ViewBuilder
+    private func statBlock(value: String, label: String) -> some View {
+        VStack(spacing: 3) {
+            Text(value)
+                .font(DS.Typography.hero())
+                .foregroundStyle(AppColors.textPrimary)
+                .minimumScaleFactor(0.6)
+                .lineLimit(1)
+            Text(label)
+                .font(DS.Typography.label())
+                .foregroundStyle(AppColors.textSecondary)
+        }
+        .frame(maxWidth: .infinity)
+    }
+
+    @ViewBuilder
+    private func dayDot(_ day: DayInfo) -> some View {
+        VStack(spacing: 4) {
+            Text(day.letter)
+                .font(.system(size: 10, weight: day.isToday ? .bold : .regular))
+                .foregroundStyle(day.isToday ? AppColors.brandForeground : AppColors.textMuted)
+
+            ZStack {
+                if day.isToday {
+                    // Today: filled brandPrimary dot with a subtle ring
+                    Circle()
+                        .strokeBorder(AppColors.brandPrimary.opacity(0.35), lineWidth: 2)
+                        .frame(width: 14, height: 14)
+                    Circle()
+                        .fill(AppColors.brandPrimary)
+                        .frame(width: 9, height: 9)
+                } else if day.hasWorkout {
+                    // Workout day: filled
+                    Circle()
+                        .fill(AppColors.brandPrimary)
+                        .frame(width: 10, height: 10)
+                } else {
+                    // Rest / future: empty
+                    Circle()
+                        .strokeBorder(AppColors.metricInactive, lineWidth: 1.5)
+                        .frame(width: 10, height: 10)
+                }
+            }
+            .frame(width: 14, height: 14)
+        }
+    }
+
+    // MARK: Helpers
+
+    private func stepsFormatted(_ n: Int) -> String {
+        n >= 1_000 ? String(format: "%.1fk", Double(n) / 1_000) : "\(n)"
     }
 }
