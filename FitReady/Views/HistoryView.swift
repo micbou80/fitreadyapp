@@ -406,9 +406,9 @@ struct InsightsView: View {
             VStack(alignment: .leading, spacing: DS.Spacing.md) {
                 insightHeader(icon: "bolt.fill", title: "Energy Balance")
 
-                if let bmr = bmrValue {
+                if let bmr = bmrValue, let targets = macroTargets {
                     let neat      = healthKit.todayActiveKcal ?? 0
-                    let totalBurn = bmr + neat
+                    let totalBurn = Double(targets.tdee)
                     // Goal deficit derived purely from pace: −550 kcal/day for 0.5 kg/week
                     let goalDef: Double? = abs(weightLossPace) > 0.001
                         ? -(weightLossPace * 7700.0 / 7.0)
@@ -418,7 +418,7 @@ struct InsightsView: View {
                         energyRow("Base (BMR)", value: bmr, bold: false)
                         energyRow("Active (NEAT)", value: neat, bold: false, prefix: "+ ")
                         Divider().padding(.vertical, DS.Spacing.xs)
-                        energyRow("Total burn", value: totalBurn, bold: true)
+                        energyRow("Total burn (TDEE)", value: totalBurn, bold: true)
 
                         if let intake = todayIntakeKcal {
                             Divider().padding(.vertical, DS.Spacing.xs)

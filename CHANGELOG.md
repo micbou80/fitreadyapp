@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-03-14 — Fix energy burned discrepancy between Today and Insights pages
+
+### Fixed
+
+- **Energy burned mismatch** — The Today page (Energy Balance card) showed a different "kcal burned" value than the Insights page (Energy Balance section). Root cause: Today used `macroTargets.tdee` (BMR × activity multiplier — a static estimate, e.g. 2444 kcal), while Insights computed `bmr + healthKit.todayActiveKcal` (BMR + live Apple Watch active kcal — a real-time partial sum, e.g. 2303 kcal). Fixed by making Insights use `Double(targets.tdee)` — the same MacroEngine TDEE used by the Today page — as the "Total burn (TDEE)" figure. The BMR and NEAT rows remain visible for informational context; only the bolded "Total burn" line is now aligned with the Today page.
+
+---
+
 ## 2026-03-14 — Profile page status icon fix + hero card status chip
 
 ### Fixed
