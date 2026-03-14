@@ -33,7 +33,6 @@ struct FoodView: View {
     // ── Setup form state ──────────────────────────────
     @State private var heightText: String = ""
     @State private var ageText: String = ""
-    @State private var showingSettings = false
 
     // ── Manual entry state ────────────────────────────
     @State private var manualKcalText: String = ""
@@ -59,14 +58,6 @@ struct FoodView: View {
         heightCm > 0 && ageYears > 0 && !biologicalSex.isEmpty
     }
 
-    /// Live TDEE = BMR + Apple Watch active kcal for today, when available.
-    private var liveTDEE: Double? {
-        guard isSetupComplete, let w = currentWeight, let neat = healthKit.todayActiveKcal else { return nil }
-        let bmr = MacroEngine.bmr(weightKg: w, heightCm: heightCm, ageYears: ageYears,
-                                  isMale: biologicalSex == "male")
-        return bmr + neat
-    }
-
     private var macroTargets: MacroTargets? {
         guard isSetupComplete, let w = currentWeight else { return nil }
         return MacroEngine.compute(
@@ -77,8 +68,7 @@ struct FoodView: View {
             activityLevel:     activityLevel,
             paceKgPerWeek:     weightLossPace,
             proteinPerKg:      proteinPerKg,
-            fatFloorPct:       fatFloorPct,
-            tdeeOverride:      liveTDEE
+            fatFloorPct:       fatFloorPct
         )
     }
 
@@ -135,12 +125,10 @@ struct FoodView: View {
                         if !isSetupComplete || currentWeight == nil {
                             setupCard
                         } else if let targets = macroTargets {
-                            targetSummaryCard(targets: targets)
-                            progressRingsCard(targets: targets)
+                            caloriesLeftCard(targets: targets)
                             if showManualEntry {
                                 mealLogCard
                             }
-                            settingsCard
                         }
                     }
                     .padding()
@@ -206,42 +194,6 @@ struct FoodView: View {
                 .pickerStyle(.segmented)
             }
 
-            // Activity level
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Activity Level").font(.subheadline).fontWeight(.semibold)
-                activityPicker
-            }
-
-            // Pace
-            VStack(alignment: .leading, spacing: 8) {
-                Text("Weight-loss Pace").font(.subheadline).fontWeight(.semibold)
-                pacePicker
-            }
-
-            // Protein target
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Protein Target").font(.subheadline).fontWeight(.semibold)
-                    Spacer()
-                    Text(String(format: "%.1f g / kg", proteinPerKg))
-                        .font(.subheadline).foregroundStyle(AppColors.dataProtein)
-                }
-                Slider(value: $proteinPerKg, in: 1.4...2.4, step: 0.1)
-                    .tint(AppColors.dataProtein)
-            }
-
-            // Fat floor
-            VStack(alignment: .leading, spacing: 8) {
-                HStack {
-                    Text("Minimum Fat").font(.subheadline).fontWeight(.semibold)
-                    Spacer()
-                    Text(String(format: "%.0f%% of calories", fatFloorPct))
-                        .font(.subheadline).foregroundStyle(AppColors.dataFat)
-                }
-                Slider(value: $fatFloorPct, in: 20...35, step: 1)
-                    .tint(AppColors.dataFat)
-            }
-
             Button("Calculate My Macros") {
                 saveSetup()
             }
@@ -251,7 +203,7 @@ struct FoodView: View {
             .frame(maxWidth: .infinity)
         }
         .padding(16)
-        .background(AppColors.card)
+        .background(.ultraThinMaterial)
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
         .onAppear {
@@ -261,166 +213,141 @@ struct FoodView: View {
         }
     }
 
-    // MARK: - Target summary card
+    // MARK: - Calories Left card
 
     @ViewBuilder
-    private func targetSummaryCard(targets: MacroTargets) -> some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .firstTextBaseline) {
-                Label("Daily Targets", systemImage: "target")
-                    .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(AppColors.textSecondary)
-                Spacer()
-                Text("\(targets.kcal)")
-                    .font(.system(size: 28, weight: .black, design: .rounded))
-                    .foregroundStyle(AppColors.dataCalories)
-                + Text(" kcal")
-                    .font(.subheadline)
-                    .foregroundStyle(AppColors.textSecondary)
+    private func caloriesLeftCard(targets: MacroTargets) -> some View {
+        let i = intake
+        let kcalConsumed = Int(i.kcal ?? 0)
+        let kcalLeft     = targets.kcal - kcalConsumed
+        let isOver       = kcalLeft < 0
+        let carbsG       = Int(i.carbs   ?? 0)
+        let proteinG     = Int(i.protein ?? 0)
+        let fatG         = Int(i.fat     ?? 0)
+
+        let carbsKcal   = Double(carbsG)   * 4
+        let proteinKcal = Double(proteinG) * 4
+        let fatKcal     = Double(fatG)     * 9
+        let totalKcal   = carbsKcal + proteinKcal + fatKcal
+
+        VStack(alignment: .leading, spacing: 16) {
+            // Section label chip
+            Text(isOver ? "OVER TARGET" : "CALORIES TODAY")
+                .font(.system(size: 12, weight: .semibold))
+                .foregroundStyle(isOver ? AppColors.danger : AppColors.accentGold)
+                .padding(.horizontal, DS.Spacing.sm)
+                .padding(.vertical, 3)
+                .background((isOver ? AppColors.danger : AppColors.accentGold).opacity(0.15))
+                .clipShape(Capsule())
+
+            // Large calorie number — current / target
+            HStack(alignment: .firstTextBaseline, spacing: 4) {
+                Text(formatCalories(kcalConsumed))
+                    .font(.system(size: 30, weight: .semibold, design: .rounded))
+                    .foregroundStyle(isOver ? AppColors.danger : .white)
+                Text("/ \(formatCalories(targets.kcal)) kcal")
+                    .font(DS.Typography.title())
+                    .foregroundStyle(AppColors.iconOnDark.opacity(0.7))
             }
 
-            HStack(spacing: 0) {
-                macroChip(value: "\(targets.proteinG)g", label: "protein",
-                          color: AppColors.dataProtein)
-                Text(" · ").foregroundStyle(AppColors.textMuted)
-                macroChip(value: "\(targets.fatG)g", label: "fat",
-                          color: AppColors.dataFat)
-                Text(" · ").foregroundStyle(AppColors.textMuted)
-                macroChip(value: "\(targets.carbsG)g", label: "carbs",
-                          color: AppColors.dataCarbs)
-            }
-            .font(.subheadline)
+            // Macro bar
+            macroBar(carbsKcal: carbsKcal, proteinKcal: proteinKcal, fatKcal: fatKcal, consumed: totalKcal, target: Double(targets.kcal))
+                .frame(height: 8)
 
             Divider()
+                .opacity(0.3)
 
-            HStack(spacing: 4) {
-                Image(systemName: liveTDEE != nil ? "bolt.fill" : "info.circle")
-                    .font(.caption)
-                Text(liveTDEE != nil
-                     ? "Live activity · \(paceLabel(weightLossPace))"
-                     : "\(MacroEngine.levelLabel(for: activityLevel)) · \(paceLabel(weightLossPace))")
-                    .font(.caption)
-            }
-            .foregroundStyle(liveTDEE != nil ? AppColors.accent.opacity(0.7) : AppColors.textMuted)
+            // Macro rows
+            macroRow(color: AppColors.dataCarbs, label: "Carbohydrates", value: carbsG, target: targets.carbsG)
+            macroRow(color: AppColors.dataProtein, label: "Protein", value: proteinG, target: targets.proteinG)
+            macroRow(color: AppColors.dataFat, label: "Fat", value: fatG, target: targets.fatG)
         }
         .padding(16)
-        .background(AppColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
-    }
-
-    // MARK: - Progress rings card
-
-    @ViewBuilder
-    private func progressRingsCard(targets: MacroTargets) -> some View {
-        let i = intake
-        let data: [(label: String, actual: Double?, target: Int, color: Color, unit: String)] = [
-            ("Calories", i.kcal,    targets.kcal,     AppColors.dataCalories, "kcal"),
-            ("Protein",  i.protein, targets.proteinG, AppColors.dataProtein,  "g"),
-            ("Fat",      i.fat,     targets.fatG,     AppColors.dataFat,      "g"),
-            ("Carbs",    i.carbs,   targets.carbsG,   AppColors.dataCarbs,    "g"),
-        ]
-
-        VStack(alignment: .leading, spacing: 14) {
-            Label("Today's Intake", systemImage: "chart.pie.fill")
-                .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(AppColors.textSecondary)
-
-            LazyVGrid(columns: [GridItem(.flexible()), GridItem(.flexible())], spacing: 14) {
-                ForEach(data.indices, id: \.self) { idx in
-                    macroRingCell(
-                        label:  data[idx].label,
-                        actual: data[idx].actual,
-                        target: data[idx].target,
-                        color:  data[idx].color,
-                        unit:   data[idx].unit
-                    )
-                }
-            }
-        }
-        .padding(16)
-        .background(AppColors.card)
+        .background(Color(red: 0.125, green: 0.259, blue: 0.18))
         .clipShape(RoundedRectangle(cornerRadius: 16))
         .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
     }
 
     @ViewBuilder
-    private func macroRingCell(
-        label: String,
-        actual: Double?,
-        target: Int,
-        color: Color,
-        unit: String
-    ) -> some View {
-        let progress = actual.map { min(1.0, $0 / Double(max(1, target))) } ?? 0
-        let pct      = Int((progress * 100).rounded())
+    private func macroBar(carbsKcal: Double, proteinKcal: Double, fatKcal: Double, consumed: Double, target: Double) -> some View {
+        GeometryReader { geo in
+            HStack(spacing: 1) {
+                if consumed > 0 && target > 0 {
+                    // Each macro's width as proportion of total target
+                    let carbsWidth = max(1, geo.size.width * (carbsKcal / target))
+                    let proteinWidth = max(1, geo.size.width * (proteinKcal / target))
+                    let fatWidth = max(1, geo.size.width * (fatKcal / target))
+                    let remainingWidth = max(0, geo.size.width * ((target - consumed) / target))
 
-        VStack(spacing: 10) {
-            ZStack {
-                // Track
-                Circle()
-                    .stroke(color.opacity(0.15), lineWidth: 10)
-                // Arc
-                Circle()
-                    .trim(from: 0, to: progress)
-                    .stroke(
-                        AngularGradient(
-                            colors: [color.opacity(0.5), color],
-                            center: .center,
-                            startAngle: .degrees(-90),
-                            endAngle: .degrees(270)
-                        ),
-                        style: StrokeStyle(lineWidth: 10, lineCap: .round)
-                    )
-                    .rotationEffect(.degrees(-90))
-                    .animation(.spring(response: 0.8, dampingFraction: 0.75), value: progress)
-                // Center
-                VStack(spacing: 1) {
-                    if let a = actual {
-                        Text(unit == "kcal" ? "\(Int(a.rounded()))" : String(format: "%.0f", a))
-                            .font(.system(size: 15, weight: .black, design: .rounded))
-                            .foregroundStyle(AppColors.textPrimary)
-                        Text("\(pct)%")
-                            .font(.system(size: 9, weight: .semibold))
-                            .foregroundStyle(color)
-                    } else {
-                        Text("—")
-                            .font(.system(size: 18, weight: .black, design: .rounded))
-                            .foregroundStyle(AppColors.textMuted)
+                    if carbsKcal > 0 {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(AppColors.dataCarbs)
+                            .frame(width: carbsWidth)
                     }
+                    if proteinKcal > 0 {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(AppColors.dataProtein)
+                            .frame(width: proteinWidth)
+                    }
+                    if fatKcal > 0 {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(AppColors.dataFat)
+                            .frame(width: fatWidth)
+                    }
+
+                    // Remaining unfilled portion
+                    if remainingWidth > 0 {
+                        RoundedRectangle(cornerRadius: 2)
+                            .fill(AppColors.metricInactive)
+                    }
+                } else {
+                    // Empty bar (no consumption)
+                    RoundedRectangle(cornerRadius: 2)
+                        .fill(AppColors.metricInactive)
                 }
             }
-            .frame(width: 90, height: 90)
-
-            VStack(spacing: 2) {
-                Text(label)
-                    .font(.subheadline).fontWeight(.semibold)
-                Text("/ \(target) \(unit)")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textMuted)
-            }
         }
-        .frame(maxWidth: .infinity)
     }
 
-    // MARK: - Meal log card (scanner + manual)
+    @ViewBuilder
+    private func macroRow(color: Color, label: String, value: Int, target: Int) -> some View {
+        HStack(spacing: 10) {
+            RoundedRectangle(cornerRadius: 3)
+                .fill(color)
+                .frame(width: 10, height: 10)
+            Text(label)
+                .font(.system(size: 16, weight: .regular))
+                .foregroundStyle(.white)
+            Spacer()
+            HStack(spacing: 2) {
+                Text("\(value)")
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+                Text("/ \(target)")
+                    .font(.system(size: 14, weight: .regular, design: .rounded))
+            }
+            .foregroundStyle(AppColors.iconOnDark.opacity(0.7))
+        }
+    }
+
+    // MARK: - Meal log card (timeline + manual)
 
     @ViewBuilder
     private var mealLogCard: some View {
-        VStack(alignment: .leading, spacing: 14) {
+        VStack(alignment: .leading, spacing: DS.Spacing.md) {
 
             // Header + Scan button
             HStack {
-                Label("Today's Meals", systemImage: "fork.knife")
-                    .font(.subheadline).fontWeight(.semibold)
+                Text("TODAY'S MEALS")
+                    .font(DS.Typography.label())
                     .foregroundStyle(AppColors.textSecondary)
+                    .kerning(0.5)
                 Spacer()
                 Button {
                     showingScanner = true
                 } label: {
-                    Label("Scan", systemImage: "camera.fill")
-                        .font(.subheadline).fontWeight(.semibold)
-                        .padding(.horizontal, 12).padding(.vertical, 6)
+                    Label("Log meal", systemImage: "camera.fill")
+                        .font(.system(size: 13, weight: .semibold))
+                        .padding(.horizontal, DS.Spacing.md).padding(.vertical, 6)
                         .background(AppColors.brandPrimary)
                         .foregroundStyle(AppColors.textOnBrand)
                         .clipShape(Capsule())
@@ -428,17 +355,19 @@ struct FoodView: View {
                 .buttonStyle(.plain)
             }
 
-            // Logged meals list
+            // Meal timeline
             if todayMeals.isEmpty {
-                Text("No meals logged yet. Scan a photo or add manually.")
-                    .font(.caption)
-                    .foregroundStyle(AppColors.textMuted)
-            } else {
-                VStack(spacing: 8) {
-                    ForEach(todayMeals) { meal in
-                        mealRow(meal)
-                    }
+                HStack(spacing: DS.Spacing.sm) {
+                    Image(systemName: "fork.knife.circle")
+                        .font(.system(size: 20))
+                        .foregroundStyle(AppColors.textMuted)
+                    Text("No meals logged yet. Scan a photo or add manually.")
+                        .font(DS.Typography.caption())
+                        .foregroundStyle(AppColors.textMuted)
                 }
+                .padding(.vertical, DS.Spacing.sm)
+            } else {
+                mealTimeline
             }
 
             Divider()
@@ -451,7 +380,7 @@ struct FoodView: View {
             } label: {
                 Label(showingManualEntryInline ? "Hide manual entry" : "Add manually",
                       systemImage: showingManualEntryInline ? "chevron.up" : "plus")
-                    .font(.subheadline)
+                    .font(DS.Typography.caption())
                     .foregroundStyle(AppColors.textSecondary)
             }
             .buttonStyle(.plain)
@@ -473,55 +402,85 @@ struct FoodView: View {
                 .frame(maxWidth: .infinity)
             }
         }
-        .padding(16)
-        .background(AppColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
+        .padding(DS.Spacing.lg)
+        .background(.ultraThinMaterial)
+        .clipShape(RoundedRectangle(cornerRadius: DS.Corner.card))
+        .overlay(RoundedRectangle(cornerRadius: DS.Corner.card).strokeBorder(DS.Border.color, lineWidth: 1))
+        .shadow(color: AppColors.shadowColor, radius: DS.Shadow.radius, x: 0, y: Int(DS.Shadow.y))
     }
 
+    /// Visual timeline of today's meals, sorted by timestamp.
     @ViewBuilder
-    private func mealRow(_ meal: MealEntry) -> some View {
-        HStack(spacing: 10) {
-            // Source icon
-            Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
-                .font(.system(size: 11))
-                .foregroundStyle(AppColors.accent)
-                .frame(width: 22, height: 22)
-                .background(AppColors.accent.opacity(0.12))
-                .clipShape(Circle())
+    private var mealTimeline: some View {
+        let sorted = todayMeals.sorted { $0.timestamp < $1.timestamp }
+        VStack(alignment: .leading, spacing: 0) {
+            ForEach(Array(sorted.enumerated()), id: \.element.id) { idx, meal in
+                HStack(alignment: .top, spacing: DS.Spacing.sm) {
 
-            VStack(alignment: .leading, spacing: 2) {
-                Text(meal.name)
-                    .font(.system(size: 13, weight: .semibold))
-                    .lineLimit(1)
-                Text(meal.timestamp.formatted(.dateTime.hour().minute()))
-                    .font(.caption2)
-                    .foregroundStyle(AppColors.textMuted)
+                    // Timeline rail
+                    VStack(spacing: 0) {
+                        Circle()
+                            .fill(mealDotColor(meal))
+                            .frame(width: 10, height: 10)
+                            .padding(.top, 5)
+
+                        if idx < sorted.count - 1 {
+                            Rectangle()
+                                .fill(DS.Border.color)
+                                .frame(width: 1)
+                                .frame(maxHeight: .infinity)
+                                .padding(.vertical, 2)
+                        }
+                    }
+                    .frame(width: 10)
+
+                    // Meal card
+                    VStack(alignment: .leading, spacing: 2) {
+                        HStack(spacing: DS.Spacing.xs) {
+                            Text(meal.timestamp.formatted(.dateTime.hour().minute()))
+                                .font(.system(size: 11, weight: .semibold, design: .monospaced))
+                                .foregroundStyle(AppColors.textMuted)
+
+                            Image(systemName: meal.source == "scan" ? "camera.fill" : "pencil")
+                                .font(.system(size: 9))
+                                .foregroundStyle(AppColors.textMuted)
+                        }
+
+                        Text(meal.name)
+                            .font(.system(size: 14, weight: .semibold))
+                            .foregroundStyle(AppColors.textPrimary)
+                            .lineLimit(1)
+
+                        HStack(spacing: DS.Spacing.sm) {
+                            mealMacroChip(value: Int(meal.kcal),      unit: "kcal", color: AppColors.dataCalories)
+                            mealMacroChip(value: Int(meal.proteinG),  unit: "P",    color: AppColors.dataProtein)
+                            mealMacroChip(value: Int(meal.carbsG),    unit: "C",    color: AppColors.dataCarbs)
+                            mealMacroChip(value: Int(meal.fatG),      unit: "F",    color: AppColors.dataFat)
+
+                            Spacer()
+
+                            Button {
+                                deleteMealEntry(id: meal.id)
+                            } label: {
+                                Image(systemName: "trash")
+                                    .font(.system(size: 11))
+                                    .foregroundStyle(AppColors.textMuted)
+                            }
+                            .buttonStyle(.plain)
+                        }
+                    }
+                    .padding(.bottom, idx < sorted.count - 1 ? DS.Spacing.md : 0)
+                }
             }
-
-            Spacer()
-
-            // Macro chips
-            HStack(spacing: 6) {
-                mealMacroChip(value: Int(meal.kcal), unit: "kcal",
-                              color: AppColors.dataCalories)
-                mealMacroChip(value: Int(meal.proteinG), unit: "P",
-                              color: AppColors.dataProtein)
-            }
-
-            // Delete button
-            Button {
-                deleteMealEntry(id: meal.id)
-            } label: {
-                Image(systemName: "trash")
-                    .font(.system(size: 12))
-                    .foregroundStyle(AppColors.textMuted)
-            }
-            .buttonStyle(.plain)
         }
-        .padding(.horizontal, 10).padding(.vertical, 8)
-        .background(AppColors.background)
-        .clipShape(RoundedRectangle(cornerRadius: 10))
+    }
+
+    private func mealDotColor(_ meal: MealEntry) -> Color {
+        switch meal.source {
+        case "scan":   return AppColors.brandPrimary
+        case "manual": return AppColors.textSecondary
+        default:       return AppColors.textMuted
+        }
     }
 
     @ViewBuilder
@@ -552,136 +511,15 @@ struct FoodView: View {
         }
     }
 
-    // MARK: - Settings card
-
-    @ViewBuilder
-    private var settingsCard: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            HStack {
-                Label("Macro Settings", systemImage: "slider.horizontal.3")
-                    .font(.subheadline).fontWeight(.semibold)
-                    .foregroundStyle(AppColors.textSecondary)
-                Spacer()
-                Button(showingSettings ? "Done" : "Edit") {
-                    withAnimation(.spring(response: 0.35)) { showingSettings.toggle() }
-                }
-                .font(.subheadline).fontWeight(.semibold)
-                .foregroundStyle(AppColors.accent)
-            }
-
-            if showingSettings {
-                Divider()
-
-                // Activity
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Activity Level").font(.subheadline).fontWeight(.semibold)
-                    activityPicker
-                }
-
-                // Pace
-                VStack(alignment: .leading, spacing: 8) {
-                    Text("Weight-loss Pace").font(.subheadline).fontWeight(.semibold)
-                    pacePicker
-                }
-
-                // Protein
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Protein Target").font(.subheadline).fontWeight(.semibold)
-                        Spacer()
-                        Text(String(format: "%.1f g/kg", proteinPerKg))
-                            .font(.subheadline)
-                            .foregroundStyle(AppColors.dataProtein)
-                    }
-                    Slider(value: $proteinPerKg, in: 1.4...2.4, step: 0.1)
-                        .tint(AppColors.dataProtein)
-                }
-
-                // Fat floor
-                VStack(alignment: .leading, spacing: 8) {
-                    HStack {
-                        Text("Min Fat").font(.subheadline).fontWeight(.semibold)
-                        Spacer()
-                        Text(String(format: "%.0f%% of kcal", fatFloorPct))
-                            .font(.subheadline)
-                            .foregroundStyle(AppColors.dataFat)
-                    }
-                    Slider(value: $fatFloorPct, in: 20...35, step: 1)
-                        .tint(AppColors.dataFat)
-                }
-
-                // Reset setup
-                Button(role: .destructive) {
-                    heightCm      = 0
-                    ageYears      = 0
-                    biologicalSex = ""
-                    heightText    = ""
-                    ageText       = ""
-                    showingSettings = false
-                } label: {
-                    Label("Reset Setup", systemImage: "arrow.counterclockwise")
-                        .font(.subheadline)
-                }
-            } else {
-                // Compact summary row
-                HStack(spacing: 12) {
-                    summaryChip(icon: "figure.walk", label: MacroEngine.levelLabel(for: activityLevel))
-                    summaryChip(icon: "scalemass", label: paceLabel(weightLossPace))
-                    summaryChip(icon: "fork.knife", label: String(format: "%.1fg/kg", proteinPerKg))
-                }
-            }
-        }
-        .padding(16)
-        .background(AppColors.card)
-        .clipShape(RoundedRectangle(cornerRadius: 16))
-        .shadow(color: AppColors.shadowColor, radius: 8, x: 0, y: 2)
-    }
-
     // MARK: - Reusable sub-views
 
-    @ViewBuilder
-    private var activityPicker: some View {
-        Picker("Activity", selection: $activityLevel) {
-            Text("Sedentary").tag("sedentary")
-            Text("Light").tag("light")
-            Text("Moderate").tag("moderate")
-            Text("Active").tag("active")
-        }
-        .pickerStyle(.segmented)
-    }
-
-    @ViewBuilder
-    private var pacePicker: some View {
-        Picker("Pace", selection: $weightLossPace) {
-            Text("Maintain").tag(0.0)
-            Text("−0.25 kg").tag(0.25)
-            Text("−0.5 kg").tag(0.5)
-            Text("−0.75 kg").tag(0.75)
-            Text("−1 kg").tag(1.0)
-        }
-        .pickerStyle(.segmented)
-        .font(.caption)
-    }
-
-    @ViewBuilder
-    private func macroChip(value: String, label: String, color: Color) -> some View {
-        (Text(value).fontWeight(.bold).foregroundStyle(color)
-            + Text(" \(label)").foregroundStyle(AppColors.textSecondary))
-    }
-
-    @ViewBuilder
-    private func summaryChip(icon: String, label: String) -> some View {
-        HStack(spacing: 4) {
-            Image(systemName: icon).font(.system(size: 10))
-            Text(label).font(.caption).lineLimit(1).minimumScaleFactor(0.7)
-        }
-        .foregroundStyle(AppColors.textSecondary)
-        .padding(.horizontal, 8).padding(.vertical, 4)
-        .background(AppColors.background)
-        .clipShape(Capsule())
-    }
-
     // MARK: - Helpers
+
+    private func formatCalories(_ value: Int) -> String {
+        let fmt = NumberFormatter()
+        fmt.numberStyle = .decimal
+        return fmt.string(from: NSNumber(value: value)) ?? "\(value)"
+    }
 
     private func paceLabel(_ pace: Double) -> String {
         pace == 0 ? "Maintain" : String(format: "−%.2g kg/wk", pace)
