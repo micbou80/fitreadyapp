@@ -198,15 +198,29 @@ FitReady/
 - Refresh on foreground via `NotificationCenter` + `UIApplication.willEnterForegroundNotification`
 
 ### Scoring Algorithm (ReadinessEngine)
-Each metric scored −1 / 0 / +1 vs. personal rolling baseline:
+Z-score methodology — accounts for personal variability rather than fixed ratios.
 
-| Metric | Good (+1) | Neutral (0) | Poor (−1) |
-|--------|-----------|-------------|-----------|
-| HRV (higher = better) | ≥ baseline × 0.95 | ≥ baseline × 0.80 | < baseline × 0.80 |
-| RHR (lower = better) | ≤ baseline × 1.03 | ≤ baseline × 1.08 | > baseline × 1.08 |
-| Sleep | ≥ target hrs | ≥ 6.0 hrs | < 6.0 hrs |
+**HRV (28-day rolling baseline):**
+`z = (today_HRV − avg28) / sd28` (nil if <3 samples available)
 
-Total −3 to +3 → verdict: ≥ 2 Ready / 0–1 Go Light / ≤ −1 Rest Day
+**RHR (7-day rolling baseline):**
+`delta = today_RHR − avg7` in bpm (nil if no data)
+
+**Combined verdict:**
+| Condition | Verdict |
+|-----------|---------|
+| z > −0.5 AND delta < +3 bpm | Ready |
+| z < −1.5 OR delta > +5 bpm | Rest |
+| Everything else | Light |
+
+**Sleep modifier:** if sleep < 6 h, downgrade verdict one level (Ready → Light, Light → Rest)
+
+**Ring display:** z clamped to [−2, +2] → mapped to 0–100%; falls back to verdict fixed value when z is nil
+**UX rule:** never show raw z-scores to the user — translate to "Ready to Train" / "Normal Day" / "Recovery Recommended"
+
+**Baseline windows:**
+- HRV: 28-day (monthly, stable autonomic baseline) — `ReadinessEngine.hrvBaselineDays`
+- RHR: 7-day slice of same baseline array — `ReadinessEngine.rhrBaselineDays`
 
 ### Macro Calculation (MacroEngine)
 1. Mifflin-St Jeor BMR (weight, height, age, sex)
@@ -226,37 +240,45 @@ Total −3 to +3 → verdict: ≥ 2 Ready / 0–1 Go Light / ≤ −1 Rest Day
 ### Color System (AppColors)
 `FitReady/Theme/AppColors.swift` is the **only** place colors are defined. All other files use
 `AppColors.<token>`. Never add hardcoded `Color(red:...)`, hex literals, or SwiftUI system color
-names (`.purple`, `.blue`, etc.) anywhere else. App is locked to dark mode via
-`preferredColorScheme(.dark)` in `FitReadyApp.swift`.
+names (`.purple`, `.blue`, etc.) anywhere else. The app follows the **device light/dark setting**
+(no `preferredColorScheme` lock). Surface/text tokens adapt; brand and card tokens are fixed.
+Cards use `.background(.ultraThinMaterial)` — text adapts naturally via the adaptive color tokens.
 
-**16-token palette:**
+**Color token palette (★ = adaptive dark/light):**
 
-| Token | Hex | Usage |
-|-------|-----|-------|
-| `brandPrimary` | #C8F135 | primary CTA bg, active metric fill, icons |
-| `brandDark` | #9BBF1A | hover / pressed tint of brand |
-| `brandMuted` | #3D4A1A | icon backgrounds on recovery cards |
-| `bg` | #0D0F0B | page / screen background |
-| `surface` | #1A1D16 | inset surfaces, picker backgrounds |
-| `raised` | #222619 | card backgrounds (SoftCard, hero card) |
-| `border` | #3A4030 | card borders, dividers, ghost button strokes |
-| `textPrimary` | #F0F5E8 | primary readable text |
-| `textSecondary` | #9AA88C | labels, captions, supporting text |
-| `textMuted` | #5C6652 | disabled, placeholder, very subtle |
-| `textOnBrand` | #0D0F0B | text on lime / amber fills |
-| `warning` | #F5A623 | yellow/amber state (Go Light) |
-| `danger` | #E8453C | red state (Rest Day) |
-| `info` | #4DA6FF | sleep metric, informational |
-| `metricActive` | #C8F135 | progress ring/bar fill |
-| `metricInactive` | #323D28 | progress ring/bar track |
+| Token | Dark hex | Light hex | Usage |
+|-------|----------|-----------|-------|
+| `brandPrimary` ★ | #D4FF3F | #C7F22B | ActionLime — primary CTA bg, active metric fill, icons |
+| `brandDark` | #B4E01F | — (fixed) | ActionLimePressed — hover / pressed tint |
+| `brandMuted` ★ | #0F1B0C | #24361F | DeepMoss — hero tint, structural depth |
+| `sage` | #8FAF8A | — (fixed) | SageGreen — success states, completed activities |
+| `bg` ★ | #11140F | #F6F7F2 | page / screen background |
+| `surface` ★ | #1A1D16 | #EAEAE5 | inset surfaces, picker backgrounds |
+| `raised` | #24361F | — (fixed) | DeepMoss card bg — **always dark, never changes** |
+| `border` ★ | #3A4030 | #D0D4C8 | card borders, dividers, ghost button strokes |
+| `textPrimary` ★ | #F7F8F3 | #111111 | primary readable text |
+| `textSecondary` ★ | #9AA88C | #5F665C | labels, captions, supporting text |
+| `textMuted` ★ | #5C6652 | #858F78 | disabled, placeholder, very subtle |
+| `textOnBrand` | #0D0F0B | — (fixed) | text on lime / amber fills |
+| `warning` | #E3A23A | — (fixed) | AmberNudge — Go Light state, nutrition nudges |
+| `danger` | #C97A52 | — (fixed) | TerracottaAlert — Rest Day state, significant imbalance |
+| `info` | #4DA6FF | — (fixed) | sleep metric, informational |
+| `metricActive` | (= brandPrimary) | — | progress ring/bar fill |
+| `metricInactive` | #24361F | — (fixed) | progress ring/bar track (DeepMoss, inside dark cards) |
+| `dataProtein` | #B6D94C | — | ProteinSage — protein category |
+| `dataCarbs` | #78B7F2 | — | CarbAzure — carbs category |
+| `dataFat` | #E07A6A | — | FatCoral — fat category |
+| `dataCalories` | #E9B44C | — | CalorieAmber — calorie category |
 
-**Backward-compat aliases** (compile but resolve to new tokens):
-`accent = brandPrimary`, `background = bg`, `card = raised`, `shadowColor = .clear`,
-`greenBase/greenText = metricActive/brandPrimary`, `amberBase/amberText = warning`,
-`redBase/redText = danger`, `dataProtein = brandPrimary`, `dataCalories/dataCarbs/dataSleep = info/warning/info`
+**Glass tinting rules (Liquid Glass spec):**
+- Hero / readiness panels: `brandPrimary.opacity(0.08)` behind `.ultraThinMaterial` (GlassTintGreen)
+- Standard cards: `.ultraThinMaterial` only (SoftCard)
+- Tint intensity must stay 6–10% opacity max
+
+**One bright action rule:** Only ONE filled `brandPrimary` element per screen. All other CTAs use ghost/outline style.
 
 **Design system rules:**
-- Cards: `raised` bg + 1pt `border` overlay — no shadows (`DS.Shadow` is zeroed)
+- Cards: `.ultraThinMaterial` bg + 1pt `border` overlay + `DS.Shadow` (0.05 opacity, radius 10)
 - CTAs: `brandPrimary` bg + `textOnBrand` text (lime); `warning` bg + `textOnBrand` (amber); `danger` bg + `textPrimary` (red)
 - Progress rings: `metricActive` fill, `metricInactive` track
 - Recovery card icons: `brandMuted` bg + `brandPrimary` icon (active cards)
@@ -308,8 +330,8 @@ All settings live in UserDefaults via `@AppStorage`. No CoreData.
 ### Xcode Project (project.pbxproj)
 - Manually maintained — no Swift Package Manager, no CocoaPods
 - UUIDs are exactly **24 hex characters**, prefix `BF000000000000000000`
-- **Next available build file UUID:** `BF0000000000000000000095`
-- **Next available file reference UUID:** `BF0000000000000000000096`
+- **Next available build file UUID:** `BF00000000000000000000BD`
+- **Next available file reference UUID:** `BF00000000000000000000BE`
 - When adding a new Swift file, add entries in **four** places:
   1. `PBXBuildFile` section (build file UUID → file ref UUID)
   2. `PBXFileReference` section (file ref UUID → path)
@@ -342,20 +364,68 @@ All settings live in UserDefaults via `@AppStorage`. No CoreData.
 - Push: `GIT_SSH_COMMAND="ssh -i ~/.ssh/id_ed25519_github" git push origin main`
 - Never commit `.DS_Store` or `*.xcuserstate`
 
+### Changelog — mandatory
+
+Every session that makes code changes must update `CHANGELOG.md` in the repo root before closing. Append a new entry at the top (newest first) using this format:
+
+```
+## YYYY-MM-DD — [short title]
+
+### Added / Changed / Fixed
+- What changed and why
+
+### Notes
+Any decisions, tradeoffs, or context future sessions need to know.
+```
+
+One entry per working session. Focus on *why*, not implementation detail. If something was tried and reverted, note it.
+
 ---
 
 ## Roadmap (Planned Features)
 
-In rough priority order:
+### 🪲 Bugs
 
-1. **Workout logging** — pre-filled sessions, tap-to-log reps/sets, auto-progression (e1RM)
-2. **Training templates** — Full Body (2–3d), Upper/Lower (4d), PPL (5d+)
-3. **Expand quick workouts** — add more Quick Recovery variants (yoga flow, foam roll, breathing) beyond the current 7-min mobility session; surface them from the Today screen
-4. **Strengthen momentum card** — current ring + message is weak; needs real weekly signal (train days hit, protein days hit, sleep days hit = 3 pillars); should feel like a score not a counter
-5. **Onboarding flow** — goal, training days, gym type, HealthKit connect
-6. **Daily momentum score** — 2/3 pillars = success, not streaks
-6. **WatchOS companion** — readiness glance, workout log
-7. **Subscriptions** — €7.99/mo or €59/yr, 7-day trial
+- ~~**Elapsed time broken in background**~~ — fixed: timer now stores `startDate` on appear and computes `elapsed = now − startDate`; recomputes on `willEnterForeground`
+- **Weight progression inconsistency** — weight jump suggestions between sessions are not consistent; review progression engine logic
+- ~~**Profile photo crop sheet**~~ — fixed: removed `NavigationStack` from `CropImageSheet`; build chrome (X button, title) manually; added `.presentationBackground(Color.black)` on the root ZStack; crop + pan + zoom gestures unchanged
+- **Home screen widget / Live Activity** — Dynamic Island or lock screen progress not yet implemented; investigate if feasible with personal team entitlements
+
+### 🏋 Workout
+
+- ~~**Adjust weights manually**~~ — fixed: tap the weight value in SetRow to open an inline TextField with decimal pad; commits on focus loss or keyboard Done
+- **Adjust number of sets** — allow user to add or remove sets per exercise in the active workout
+- **Effort-based progression** — capture RPE or effort signal after each set to determine the next session's advice
+- **HealthKit write-back after workout** — decide what to write back (active energy, workout type, duration) and implement HKWorkout save
+- **Add Walk as exercise type** — duration + incline/pace cardio entry, distinct from strength exercises
+- **Card-swipe UI for workouts** — replace list with swipeable exercise cards during an active session
+- **Reorder exercises in workout** — allow drag-to-reorder exercises within a session
+- **End-of-workout summary card** — show a completion card after finishing: sets done, estimated kcal, progression highlights
+- **NEAT link in end card** — clarify how the workout's active energy feeds into the NEAT / energy balance shown in Insights
+- **Launch Apple Workout app** — evaluate whether triggering the native Workout app is needed or beneficial (Watch integration)
+- **Workout logging** — pre-filled sessions, tap-to-log reps/sets, auto-progression (e1RM) ← core feature
+- **Training templates** — Full Body (2–3d), Upper/Lower (4d), PPL (5d+)
+
+### 🏠 Today / Home
+
+- **Action card more interactive** — hero card CTAs feel static; explore gesture, animation, or contextual action improvements
+- **Rebuild momentum card** — ReinforcementSection hidden; redesign as a real weekly score (train days + protein days + sleep days = 3 pillars), not a ring counter
+- **Expand quick workouts** — more Quick Recovery variants (yoga flow, foam roll, breathing); surface from Today screen
+
+### 🥗 Food
+
+- **Meal timeline** — show meals logged today as a visual timeline instead of a flat list
+
+### ⚙️ Infrastructure
+
+- **Onboarding flow** — goal, training days, gym type, HealthKit connect
+- **Daily momentum score** — 2/3 pillars = success, not streaks
+- **Error logging** — structured error log for debugging production issues
+- **Security review** — audit AppStorage keys, API key storage, input validation
+- **In-app feedback board** — lightweight way for users to report bugs or suggest features
+- **Track Anthropic API usage per user** — currently untracked; target €1–2/user/month; add usage monitoring
+- **WatchOS companion** — readiness glance, workout log
+- **Subscriptions** — €7.99/mo or €59/yr, 7-day trial
 
 ### AI Strategy
 - `claude-sonnet-4-6`: food photo estimation (current)
