@@ -2,6 +2,24 @@
 
 ---
 
+## 2026-03-14 — Set Status sheet redesign + Insights weekly hero card
+
+### Changed
+
+- **Set Status sheet redesign** — Replaced the inline chip-grid picker in `ProfileView` with a tappable summary row that opens a full modal sheet (`SetStatusSheet`). The sheet follows the design reference exactly: bold "Set Status" title, four full-width rows (icon · name + subtitle · radio button), and a full-width "DONE" button at the bottom. Selected row background uses `AppColors.raised` (DeepMoss — always dark); radio uses `AppColors.brandPrimary` filled circle; unselected row uses `AppColors.surface` with an `AppColors.border` ring. Rows are separated by `DS.Spacing.sm` gaps, corner `DS.Corner.card`, outer padding `DS.Spacing.lg`, min row height 70pt.
+- **`UserStatus` copy + icons updated** — Taglines and SF Symbol icon names updated to match design spec: `figure.run`, `sun.horizon`, `thermometer`, `figure.mind.and.body`. Taglines changed to: "Being healthy and active.", "Taking a few days off to recover.", "Needing rest to get well.", "Needing time to heal."
+
+### Added
+
+- **Weekly progress hero card (`WeeklyProgressHeroCard`)** — New `SoftCard`-based hero card inserted at the top of the Insights tab (above Goal Progress). Shows: "THIS WEEK" label (uppercased, `DS.Typography.label()`, `AppColors.textSecondary`); three stat blocks side by side — Workouts (`WorkoutStore` count vs. planned from `weeklyPlan`), Active kcal (sum of `healthKit.weeklyActiveKcal`), Steps (sum of `healthKit.weeklySteps`); a Mon–Sun 7-dot strip where workout days show filled `brandPrimary` dots, today shows a `brandPrimary` dot with a subtle ring, and rest/future days show empty `metricInactive` ring dots. Stat numbers use `DS.Typography.hero()` weight.
+
+### Notes
+
+- One bright element rule maintained: in the Set Status sheet the only `brandPrimary` fill is the selected radio button; the Done button uses `AppColors.raised` (DeepMoss). On the Insights tab, `brandPrimary` is used only for today's dot and filled workout-day dots — no second lime CTA exists on the same visible screen region as the sheet.
+- `WeeklyProgressHeroCard` is declared `struct` (not `private struct`) so it can be previewed independently if needed in future.
+
+---
+
 ## 2026-03-14 — Workout fixes, user status, weekly review, meal timeline, error log
 
 ### Fixed
