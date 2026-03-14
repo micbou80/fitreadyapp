@@ -132,9 +132,6 @@ struct TodayView: View {
                         // — Energy balance: TDEE vs food logged —
                         EnergyBalanceSection(vm: vm)
 
-                        // — Weekly review —
-                        WeeklyReviewCard()
-
                         Spacer(minLength: DS.Spacing.xl)
                     }
                     .padding(.horizontal, DS.Spacing.lg)
