@@ -47,7 +47,7 @@ struct ActiveWorkoutSheet: View {
                                     },
                                     onRemoveSet: {
                                         guard liveSets[i].count > 1 else { return }
-                                        withAnimation(.spring(duration: 0.25)) {
+                                        _ = withAnimation(.spring(duration: 0.25)) {
                                             liveSets[i].removeLast()
                                         }
                                         Haptics.impact(.light)
