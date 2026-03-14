@@ -1,5 +1,6 @@
 import HealthKit
 import SwiftUI
+import UIKit
 
 @MainActor
 final class HealthKitManager: ObservableObject {
@@ -18,10 +19,37 @@ final class HealthKitManager: ObservableObject {
     // Activity — summed for today
     @Published var todaySteps: Double?
     @Published var todayActiveKcal: Double?
+    // Weekly activity (past 7 days keyed by start-of-day Date)
+    @Published var weeklySteps: [Date: Double] = [:]
+    @Published var weeklyActiveKcal: [Date: Double] = [:]
+    /// Most recent running pace from HealthKit (seconds per km). nil = no data or unavailable.
+    @Published var recentRunningPaceSecsPerKm: Double? = nil
     @Published var isAuthorized = false
     @Published var isLoading = false
     @Published var authError: String?
     @Published var lastLoadedAt: Date?
+
+    private var foregroundObserver: NSObjectProtocol?
+
+    init() {
+        foregroundObserver = NotificationCenter.default.addObserver(
+            forName: UIApplication.willEnterForegroundNotification,
+            object: nil,
+            queue: .main
+        ) { [weak self] _ in
+            guard let self else { return }
+            Task { @MainActor in
+                guard self.isAuthorized else { return }
+                await self.loadData()
+            }
+        }
+    }
+
+    deinit {
+        if let obs = foregroundObserver {
+            NotificationCenter.default.removeObserver(obs)
+        }
+    }
 
     private let readTypes: Set<HKObjectType> = {
         var types = Set<HKObjectType>()
@@ -36,6 +64,8 @@ final class HealthKitManager: ObservableObject {
         if let t = HKObjectType.quantityType(forIdentifier: .dietaryCarbohydrates)      { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .stepCount)                 { types.insert(t) }
         if let t = HKObjectType.quantityType(forIdentifier: .activeEnergyBurned)        { types.insert(t) }
+        // Running speed — for auto-populating pace in IntervalRunSheet (iOS 16+)
+        if let t = HKObjectType.quantityType(forIdentifier: .runningSpeed)              { types.insert(t) }
         return types
     }()
 
@@ -57,10 +87,11 @@ final class HealthKitManager: ObservableObject {
 
     // MARK: - Data Loading
 
-    func loadData(baselineDays: Int = 7) async {
+    func loadData() async {
         guard isAuthorized else { return }
         isLoading = true
         defer { isLoading = false }
+        let baselineDays = ReadinessEngine.hrvBaselineDays  // 28 days; engine slices for RHR (7)
 
         let cal = Calendar.current
         let now = Date()
@@ -122,12 +153,39 @@ final class HealthKitManager: ObservableObject {
             ))
         }
         baselineMetrics = metrics
+
+        // Weekly steps + active kcal for the Insights tab
+        await fetchWeeklyActivity()
+
+        // Running pace — most recent sample from the past 30 days
+        recentRunningPaceSecsPerKm = await fetchRecentRunningPace()
+
         lastLoadedAt = Date()
+    }
+
+    private func fetchWeeklyActivity() async {
+        let cal = Calendar.current
+        let now = Date()
+        let todayStart = cal.startOfDay(for: now)
+        var stepsDict:   [Date: Double] = [:]
+        var kcalDict:    [Date: Double] = [:]
+        for dayOffset in 0..<7 {
+            let dayStart = cal.date(byAdding: .day, value: -dayOffset, to: todayStart)!
+            let dayEnd   = cal.date(byAdding: .day, value: 1, to: dayStart)!
+            async let s = fetchQuantitySum(type: HKQuantityType(.stepCount),          unit: .count(),       from: dayStart, to: dayEnd)
+            async let k = fetchQuantitySum(type: HKQuantityType(.activeEnergyBurned), unit: .kilocalorie(), from: dayStart, to: dayEnd)
+            if let v = await s { stepsDict[dayStart] = v }
+            if let v = await k { kcalDict[dayStart]  = v }
+        }
+        weeklySteps      = stepsDict
+        weeklyActiveKcal = kcalDict
     }
 
     // MARK: - Private fetch helpers
 
-    /// Sums all quantity samples of a given type within a date range.
+    /// Sums a cumulative quantity (steps, calories, nutrition) over a date range.
+    /// Uses HKStatisticsQuery so HealthKit deduplicates overlapping sources
+    /// (e.g. iPhone + Apple Watch both recording steps) automatically.
     private func fetchQuantitySum(
         type: HKQuantityType,
         unit: HKUnit,
@@ -136,16 +194,13 @@ final class HealthKitManager: ObservableObject {
     ) async -> Double? {
         let predicate = HKQuery.predicateForSamples(withStart: start, end: end, options: .strictStartDate)
         return await withCheckedContinuation { continuation in
-            let query = HKSampleQuery(
-                sampleType: type,
-                predicate: predicate,
-                limit: HKObjectQueryNoLimit,
-                sortDescriptors: nil
-            ) { _, samples, _ in
-                let total = (samples as? [HKQuantitySample])?.reduce(0.0) {
-                    $0 + $1.quantity.doubleValue(for: unit)
-                }
-                continuation.resume(returning: total.flatMap { $0 > 0 ? $0 : nil })
+            let query = HKStatisticsQuery(
+                quantityType: type,
+                quantitySamplePredicate: predicate,
+                options: .cumulativeSum
+            ) { _, statistics, _ in
+                let value = statistics?.sumQuantity()?.doubleValue(for: unit)
+                continuation.resume(returning: value.flatMap { $0 > 0 ? $0 : nil })
             }
             self.store.execute(query)
         }
@@ -257,6 +312,34 @@ final class HealthKitManager: ObservableObject {
                 continuation.resume(returning: value)
             }
             store.execute(query)
+        }
+    }
+
+    /// Fetches the most recent running speed sample (past 30 days) and converts it to sec/km.
+    /// HealthKit stores running speed in m/s. Conversion: secsPerKm = 1000 / (m/s).
+    /// Returns nil when no samples are available or the device doesn't support the type.
+    private func fetchRecentRunningPace() async -> Double? {
+        guard let type = HKObjectType.quantityType(forIdentifier: .runningSpeed) else { return nil }
+        let from = Calendar.current.date(byAdding: .day, value: -30, to: Date()) ?? Date()
+        let predicate = HKQuery.predicateForSamples(withStart: from, end: Date(), options: .strictStartDate)
+        return await withCheckedContinuation { continuation in
+            let query = HKSampleQuery(
+                sampleType: type,
+                predicate: predicate,
+                limit: 1,
+                sortDescriptors: [NSSortDescriptor(key: HKSampleSortIdentifierEndDate, ascending: false)]
+            ) { _, samples, _ in
+                guard let sample = samples?.first as? HKQuantitySample else {
+                    continuation.resume(returning: nil)
+                    return
+                }
+                // m/s → seconds per km: 1000 / speedMps
+                let speedMps = sample.quantity.doubleValue(for: HKUnit.meter().unitDivided(by: .second()))
+                guard speedMps > 0 else { continuation.resume(returning: nil); return }
+                let secsPerKm = 1000.0 / speedMps
+                continuation.resume(returning: secsPerKm)
+            }
+            self.store.execute(query)
         }
     }
 
