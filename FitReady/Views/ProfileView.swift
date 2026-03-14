@@ -226,6 +226,23 @@ struct ProfileView: View {
                             .font(.system(size: 13))
                             .foregroundStyle(heroSub)
                             .multilineTextAlignment(.center)
+
+                        // Status chip — only surfaced when non-active
+                        let currentStatus = UserStatus.from(userStatus)
+                        if currentStatus != .active {
+                            HStack(spacing: 5) {
+                                Image(systemName: currentStatus.icon)
+                                    .font(.system(size: 11, weight: .medium))
+                                Text(currentStatus.label)
+                                    .font(.system(size: 12, weight: .semibold))
+                            }
+                            .foregroundStyle(heroText)
+                            .padding(.horizontal, 12)
+                            .padding(.vertical, 5)
+                            .background(currentStatus.color.opacity(0.28))
+                            .clipShape(Capsule())
+                            .padding(.top, 4)
+                        }
                     }
 
                     // Goal progress bar
@@ -318,10 +335,10 @@ struct ProfileView: View {
             Button { showingStatusPicker = true } label: {
                 HStack(spacing: DS.Spacing.md) {
                     Image(systemName: UserStatus.from(userStatus).icon)
-                        .font(.system(size: 15, weight: .regular))
-                        .foregroundStyle(AppColors.brandPrimary)
+                        .font(.system(size: 15, weight: .medium))
+                        .foregroundStyle(UserStatus.from(userStatus).color)
                         .frame(width: 32, height: 32)
-                        .background(AppColors.raised)
+                        .background(UserStatus.from(userStatus).color.opacity(0.18))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     VStack(alignment: .leading, spacing: 2) {
