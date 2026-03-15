@@ -476,11 +476,15 @@ struct FoodView: View {
     @ViewBuilder
     private func timelineRailIcon(entry: TimelineEntry) -> some View {
         switch entry {
-        case .meal(let meal):
-            Circle()
-                .fill(mealDotColor(meal))
-                .frame(width: 10, height: 10)
-                .padding(.leading, 11) // centre the dot within the 32pt frame
+        case .meal:
+            ZStack {
+                Circle()
+                    .fill(AppColors.brandMuted)
+                    .frame(width: 28, height: 28)
+                Image(systemName: "fork.knife")
+                    .font(.system(size: 13, weight: .semibold))
+                    .foregroundStyle(AppColors.textPrimary)
+            }
         case .workout(let workout):
             ZStack {
                 Circle()
@@ -509,7 +513,6 @@ struct FoodView: View {
             Text(meal.name)
                 .font(.system(size: 14, weight: .semibold))
                 .foregroundStyle(AppColors.textPrimary)
-                .lineLimit(1)
 
             HStack(spacing: DS.Spacing.sm) {
                 mealMacroChip(value: Int(meal.kcal),      unit: "kcal", color: AppColors.dataCalories)
@@ -549,14 +552,6 @@ struct FoodView: View {
                 .foregroundStyle(AppColors.textSecondary)
         }
         .padding(.bottom, isLast ? 0 : DS.Spacing.md)
-    }
-
-    private func mealDotColor(_ meal: MealEntry) -> Color {
-        switch meal.source {
-        case "scan":   return AppColors.brandPrimary
-        case "manual": return AppColors.textSecondary
-        default:       return AppColors.textMuted
-        }
     }
 
     private func workoutSymbol(for type: HKWorkoutActivityType) -> String {
