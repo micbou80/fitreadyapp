@@ -2,6 +2,14 @@
 
 ---
 
+## 2026-03-15 — Fix food timeline icons invisible on light theme
+
+### Fixed
+
+- **Timeline rail icons invisible in light mode** — Both the meal (`fork.knife`) and workout activity icons in the Food page day timeline used `AppColors.brandMuted` as the circle background, which is a dark colour that does not adapt to light mode. Dark icons on a dark background made them invisible. Updated both cases in `timelineRailIcon` to use `AppColors.accentGold.opacity(0.18)` as the circle fill and `AppColors.textPrimary` as the icon foreground — the same adaptive pattern used by Profile page menu rows. Works correctly in both light and dark themes.
+
+---
+
 ## 2026-03-14 — WorkoutSummarySheet uses real body weight for kcal estimate
 
 ### Changed

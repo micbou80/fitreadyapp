@@ -479,7 +479,7 @@ struct FoodView: View {
         case .meal:
             ZStack {
                 Circle()
-                    .fill(AppColors.brandMuted)
+                    .fill(AppColors.accentGold.opacity(0.18))
                     .frame(width: 28, height: 28)
                 Image(systemName: "fork.knife")
                     .font(.system(size: 13, weight: .semibold))
@@ -488,11 +488,11 @@ struct FoodView: View {
         case .workout(let workout):
             ZStack {
                 Circle()
-                    .fill(AppColors.brandMuted)
+                    .fill(AppColors.accentGold.opacity(0.18))
                     .frame(width: 28, height: 28)
                 Image(systemName: workoutSymbol(for: workout.workoutActivityType))
                     .font(.system(size: 13, weight: .semibold))
-                    .foregroundStyle(AppColors.brandPrimary)
+                    .foregroundStyle(AppColors.textPrimary)
             }
         }
     }
