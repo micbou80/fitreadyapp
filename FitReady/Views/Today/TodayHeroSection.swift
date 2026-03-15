@@ -80,20 +80,15 @@ struct TodayHeroSection: View {
                 .clipShape(Capsule())
 
             // Headline
-            Text(headlineText)
+            Text(vm.heroMessage.headline)
                 .font(DS.Typography.hero())
                 .foregroundStyle(heroTextColor)
 
-            // Reassurance
-            Text(reassuranceText)
-                .font(DS.Typography.body())
-                .foregroundStyle(heroSubtextColor)
-
-            // Reason (muted)
-            if !vm.readinessReason.isEmpty {
-                Text(vm.readinessReason)
-                    .font(DS.Typography.caption())
-                    .foregroundStyle(heroMutedColor)
+            // Supporting line (nutrition / movement nudge, or reason fallback)
+            if !vm.heroMessage.supportingLine.isEmpty {
+                Text(vm.heroMessage.supportingLine)
+                    .font(DS.Typography.body())
+                    .foregroundStyle(heroSubtextColor)
             }
 
             // Plan context
@@ -393,38 +388,4 @@ struct TodayHeroSection: View {
 
     private var tomorrowTypeLabel: String { tomorrowType.label }
 
-    // MARK: - Copy
-
-    private var headlineText: String {
-        // Status overrides take priority over biometric readiness copy
-        switch vm.currentUserStatus {
-        case .sick:    return "Take it easy today.\nYour body is fighting."
-        case .injured: return "Protect your recovery.\nModified movement only."
-        case .onBreak: return "Enjoy your break.\nYou've earned the rest."
-        case .active:  break
-        }
-        switch (vm.readinessState, vm.todayPlanType) {
-        case (.green, .strength): return "You're ready.\nGo make it count."
-        case (.green, .run):      return "You're ready.\nTime to run."
-        case (.green, .walk):     return "You're ready.\nGet those steps in."
-        case (.green, .mobility): return "You're ready.\nMove and stretch."
-        case (.green, .rest):     return "Rest day planned.\nYour body will thank you."
-        case (.yellow, _):        return "Go lighter today.\nKeep the momentum."
-        case (.red, _):           return "Rest today.\nLet your body rebuild."
-        }
-    }
-
-    private var reassuranceText: String {
-        switch vm.currentUserStatus {
-        case .sick:    return "Skip training — rest is the best medicine."
-        case .injured: return "Listen to your body. Gentle movement only."
-        case .onBreak: return "Consistency matters. Breaks are part of the plan."
-        case .active:  break
-        }
-        switch vm.readinessState {
-        case .green:  return "Body primed, schedule clear. Push hard."
-        case .yellow: return "Lighter days are how progress sticks."
-        case .red:    return "Recovery is when you actually get stronger."
-        }
-    }
 }
