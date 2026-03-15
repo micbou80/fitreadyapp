@@ -334,11 +334,12 @@ struct ProfileView: View {
 
             Button { showingStatusPicker = true } label: {
                 HStack(spacing: DS.Spacing.md) {
-                    Image(systemName: UserStatus.from(userStatus).icon)
+                    let status = UserStatus.from(userStatus)
+                    Image(systemName: status.icon)
                         .font(.system(size: 15, weight: .medium))
-                        .foregroundStyle(UserStatus.from(userStatus).color)
+                        .foregroundStyle(status == .active ? AppColors.textPrimary : status.color)
                         .frame(width: 32, height: 32)
-                        .background(UserStatus.from(userStatus).color.opacity(0.18))
+                        .background(status == .active ? AppColors.accentGold.opacity(0.18) : status.color.opacity(0.18))
                         .clipShape(RoundedRectangle(cornerRadius: 8))
 
                     VStack(alignment: .leading, spacing: 2) {
